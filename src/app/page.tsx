@@ -1,411 +1,2401 @@
 "use client";
 
-import AnimatedSection from "@/components/AnimatedSection";
-import AnimatedElement from "@/components/AnimatedElement";
-import AnimatedText from "@/components/AnimatedText";
-import GradientBackground from "@/components/GradientBackground";
-import GlowEffect from "@/components/GlowEffect";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-export default function Home() {
+// ------------------------------------------------------------------
+// Design tokens
+// ------------------------------------------------------------------
+const C = {
+  slate: "#2C2C2A",
+  slateSoft: "#3a3a37",
+  amber: "#E8A040",
+  amberDeep: "#c98223",
+  amberSoft: "rgba(232,160,64,0.12)",
+  warm: "#F5F0EB",
+  warmDeep: "#ebe4db",
+  warmSoftest: "#fbf8f4",
+  stone: "#888780",
+  stoneSoft: "#b8b6ad",
+  stoneLine: "rgba(44,44,42,0.10)",
+  stoneLineSoft: "rgba(44,44,42,0.06)",
+  paper: "#ffffff",
+} as const;
+
+const F = {
+  display: "var(--font-display-stack)",
+  body: "var(--font-body-stack)",
+  mono: "var(--font-mono-stack)",
+} as const;
+
+// ------------------------------------------------------------------
+// Icon set — single-stroke, slate by default
+// ------------------------------------------------------------------
+type IconName =
+  | "search"
+  | "pin"
+  | "pin-fill"
+  | "star"
+  | "clock"
+  | "car"
+  | "house"
+  | "shield"
+  | "check-circle"
+  | "arrow-r"
+  | "arrow-l"
+  | "heart"
+  | "cover"
+  | "wallet"
+  | "sun"
+  | "phone";
+
+function Icon({
+  name,
+  size = 20,
+  color = "currentColor",
+  stroke = 1.6,
+}: {
+  name: IconName;
+  size?: number;
+  color?: string;
+  stroke?: number;
+}) {
+  const p = {
+    fill: "none",
+    stroke: color,
+    strokeWidth: stroke,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  const v = "0 0 24 24";
+  switch (name) {
+    case "search":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <circle cx="11" cy="11" r="7" {...p} />
+          <path d="M20 20l-3.5-3.5" {...p} />
+        </svg>
+      );
+    case "pin":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M12 21s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z" {...p} />
+          <circle cx="12" cy="9" r="2.5" {...p} />
+        </svg>
+      );
+    case "pin-fill":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M12 21s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z" fill={color} />
+          <circle cx="12" cy="9" r="2.4" fill="#fff" />
+        </svg>
+      );
+    case "star":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path
+            d="M12 3l2.6 5.6 6 .7-4.5 4.2 1.3 6L12 16.6 6.6 19.5l1.3-6L3.4 9.3l6-.7L12 3z"
+            fill={color}
+            stroke={color}
+            strokeWidth="0.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "clock":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <circle cx="12" cy="12" r="9" {...p} />
+          <path d="M12 7v5l3.5 2" {...p} />
+        </svg>
+      );
+    case "car":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path
+            d="M5 16h14M6 16v2M18 16v2M5 16l1.5-5.5a2 2 0 011.9-1.5h7.2a2 2 0 011.9 1.5L19 16"
+            {...p}
+          />
+          <circle cx="8" cy="16" r="1.5" {...p} />
+          <circle cx="16" cy="16" r="1.5" {...p} />
+        </svg>
+      );
+    case "house":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M4 11l8-7 8 7v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9z" {...p} />
+          <path d="M10 21v-6h4v6" {...p} />
+        </svg>
+      );
+    case "shield":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" {...p} />
+          <path d="M9 12l2.2 2.2L15 10.5" {...p} />
+        </svg>
+      );
+    case "check-circle":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <circle cx="12" cy="12" r="9" {...p} />
+          <path d="M8 12.5l3 3 5-6" {...p} />
+        </svg>
+      );
+    case "arrow-r":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M5 12h14M13 6l6 6-6 6" {...p} />
+        </svg>
+      );
+    case "arrow-l":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M19 12H5M11 6l-6 6 6 6" {...p} />
+        </svg>
+      );
+    case "heart":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z" {...p} />
+        </svg>
+      );
+    case "cover":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path d="M3 12l9-7 9 7M5 11v9h14v-9" {...p} />
+        </svg>
+      );
+    case "wallet":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path
+            d="M4 7c0-1.1.9-2 2-2h13v3M4 7v11a2 2 0 002 2h13v-4M19 13h-3a2 2 0 010-4h3v4z"
+            {...p}
+          />
+        </svg>
+      );
+    case "sun":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <circle cx="12" cy="12" r="4" {...p} />
+          <path
+            d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M5 19l1.4-1.4M17.6 6.4L19 5"
+            {...p}
+          />
+        </svg>
+      );
+    case "phone":
+      return (
+        <svg width={size} height={size} viewBox={v}>
+          <path
+            d="M5 4h3l2 5-2.5 1.5a11 11 0 005 5L14 13l5 2v3a2 2 0 01-2 2A14 14 0 013 6a2 2 0 012-2z"
+            {...p}
+          />
+        </svg>
+      );
+  }
+}
+
+// ------------------------------------------------------------------
+// Wordmark — Dryv·way with amber dot
+// ------------------------------------------------------------------
+function Wordmark({
+  size = 22,
+  color = C.slate,
+  accent = C.amber,
+}: {
+  size?: number;
+  color?: string;
+  accent?: string;
+}) {
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      <GradientBackground />
-      
-      {/* Header */}
-      <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <nav className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <motion.div 
-              className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent"
-              whileHover={{ scale: 1.05 }}
-            >
-              Verbalizelt
-            </motion.div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#service" className="text-black hover:text-yellow-500 transition-colors font-medium">Service</a>
-              <a href="#blog" className="text-black hover:text-yellow-500 transition-colors font-medium">Blog</a>
-              <a href="#about" className="text-black hover:text-yellow-500 transition-colors font-medium">About Us</a>
-              <a href="#contact" className="text-black hover:text-yellow-500 transition-colors font-medium">Contact</a>
-            </div>
-            <GlowEffect className="group">
-              <Button variant="gradient" size="default">
-                Register
-              </Button>
-            </GlowEffect>
-          </div>
-        </nav>
-      </header>
+    <span
+      style={{
+        fontFamily: F.display,
+        fontWeight: 700,
+        fontSize: size,
+        letterSpacing: -0.6,
+        color,
+        display: "inline-flex",
+        alignItems: "baseline",
+      }}
+    >
+      <span>Dryv</span>
+      <span style={{ color: accent }}>·</span>
+      <span>way</span>
+    </span>
+  );
+}
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        <div className="flex flex-col gap-12">
-          {/* Title and Content */}
-          <AnimatedSection direction="up" className="space-y-6 text-center lg:text-left relative z-10">
-            <AnimatedText 
-              text="We make you learn language easily!"
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight"
-            />
-            <p className="text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              We help you learn language easily, with small lessons, you'll earn points and unlock new levels while improving your real world communications.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto lg:mx-0">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1"
-              />
-              <GlowEffect className="group">
-                <Button variant="gradient" size="lg" className="whitespace-nowrap">
-                  Get Started
-                </Button>
-              </GlowEffect>
-            </div>
-            <div className="flex items-center justify-center lg:justify-start gap-4 pt-4">
-              <span className="text-sm text-gray-600">Students Enroll</span>
-              <div className="flex -space-x-2">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 border-2 border-white"
-                  />
-                ))}
-                <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-semibold">
-                  2m
-                </div>
-              </div>
-            </div>
-          </AnimatedSection>
+// ------------------------------------------------------------------
+// Hooks
+// ------------------------------------------------------------------
+function useScrollY() {
+  const [y, setY] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const on = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setY(window.scrollY));
+    };
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
+  return y;
+}
 
-          {/* Phone Mockups */}
-          <AnimatedSection direction="up" delay={0.2} className="relative">
-            <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100 rounded-3xl p-8 space-y-8 relative overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,215,0,0.1),transparent_50%)]"></div>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 relative z-10">
-                {/* Left Phone */}
-                <motion.div 
-                  className="relative"
-                  whileHover={{ scale: 1.05, rotate: 2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="bg-white rounded-3xl shadow-2xl p-4 max-w-xs mx-auto border-2 border-yellow-200">
-                    <div className="bg-gray-100 rounded-2xl h-96 flex items-center justify-center">
-                      <div className="text-center space-y-4 p-8">
-                        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-4xl">👩</span>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-800">Learn a new language with a native speaker!</p>
-                        <p className="text-xs text-gray-600">We help you learn language easily with small lessons and unlock new levels while improving</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+function useReveal(opts: { threshold?: number; rootMargin?: string } = {}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      {
+        threshold: opts.threshold ?? 0.15,
+        rootMargin: opts.rootMargin ?? "0px 0px -8% 0px",
+      },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [opts.threshold, opts.rootMargin]);
+  return [ref, shown] as const;
+}
 
-                {/* Right Phone */}
-                <motion.div 
-                  className="relative"
-                  whileHover={{ scale: 1.05, rotate: -2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="bg-white rounded-3xl shadow-2xl p-4 max-w-xs mx-auto border-2 border-yellow-200">
-                    <div className="bg-gray-50 rounded-2xl h-96 p-4 space-y-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-xs font-semibold">9:27</div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-purple-500"></div>
-                          <span className="text-xs font-semibold">Hello Marrie</span>
-                        </div>
-                        <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                      </div>
-                      <div className="bg-yellow-400 rounded-xl p-4 text-center">
-                        <div className="text-2xl font-bold mb-2">75%</div>
-                        <p className="text-xs font-semibold">Good result! Your Singapore has been improved.</p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold">Your Lesson</p>
-                        <div className="bg-white rounded-lg p-3 flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white text-xs">📖</div>
-                          <div className="flex-1">
-                            <p className="text-xs font-semibold">Reading</p>
-                            <p className="text-xs text-gray-500">Your completed 34%</p>
-                          </div>
-                        </div>
-                        <div className="bg-white rounded-lg p-3 flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-white text-xs">🎤</div>
-                          <div className="flex-1">
-                            <p className="text-xs font-semibold">Speaking</p>
-                            <p className="text-xs text-gray-500">Your completed 54%</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-2 mt-4">
-                        <p className="text-xs font-semibold">Native Speakers</p>
-                        <div className="bg-white rounded-lg p-2 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500"></div>
-                            <div className="flex-1">
-                              <p className="text-xs font-semibold">Emilia Schmidt</p>
-                              <p className="text-xs text-gray-500">Paris France</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-500"></div>
-                            <div className="flex-1">
-                              <p className="text-xs font-semibold">Pierre Duory</p>
-                              <p className="text-xs text-gray-500">Native French speaker</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 bg-white">
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
-          <AnimatedElement direction="right">
-            <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
-              Why you'll love learning with Verbalizelt
-            </h2>
-          </AnimatedElement>
-          <AnimatedElement direction="left">
-            <p className="text-lg text-gray-700">
-              Reach your goals your way with features designed for the fastest, most fun way to learn a language.
-            </p>
-          </AnimatedElement>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          <AnimatedElement direction="up" index={0} stagger={0.2}>
-            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 hover:border-yellow-400 transition-colors">
-              <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-                  Make progress Quickly
-                </CardTitle>
-                <CardDescription className="text-base">
-                  Combining the best of all and language science, lessons are tailored to help you learn at just the right level and place.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-white rounded-xl p-4 h-64 flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <div className="w-24 h-40 mx-auto bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center shadow-lg">
-                      <span className="text-white text-4xl">👩</span>
-                    </div>
-                    <p className="text-sm font-semibold">Learn a new</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </AnimatedElement>
-
-          <AnimatedElement direction="up" index={1} stagger={0.2}>
-            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 hover:border-yellow-400 transition-colors">
-              <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-                  Personalized Learning
-                </CardTitle>
-                <CardDescription className="text-base">
-                  Research shows our courses effectively and efficiently teach reading, listening and speaking skills.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-white rounded-xl p-4 h-64 flex items-center justify-center">
-                  <div className="w-full space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 shadow-md"></div>
-                      <span className="text-sm font-semibold">Hello Marrie</span>
-                    </div>
-                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-3 text-center shadow-md">
-                      <div className="text-xl font-bold text-white">75%</div>
-                      <p className="text-xs text-white">Good result!</p>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="bg-gray-100 rounded p-2 flex items-center gap-2 hover:bg-gray-200 transition-colors">
-                        <div className="w-6 h-6 bg-blue-500 rounded shadow-sm"></div>
-                        <span className="text-xs">Reading</span>
-                      </div>
-                      <div className="bg-gray-100 rounded p-2 flex items-center gap-2 hover:bg-gray-200 transition-colors">
-                        <div className="w-6 h-6 bg-green-500 rounded shadow-sm"></div>
-                        <span className="text-xs">Speaking</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </AnimatedElement>
-        </div>
-      </section>
-
-      {/* World Map Section */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 relative">
-        <AnimatedSection direction="fade" className="text-center mb-12">
-          <AnimatedText 
-            text="Learn a new language the fun way"
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4"
-          />
-          <p className="text-lg text-gray-700">
-            Reach your language goals fast with the world's #1 education app.
-          </p>
-        </AnimatedSection>
-
-        <AnimatedSection direction="up" className="mb-16">
-          <div className="bg-gray-100 rounded-2xl p-8 lg:p-16 h-96 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🌍</div>
-              <p className="text-gray-600">World Map Placeholder</p>
-              <p className="text-sm text-gray-500 mt-2">Interactive map showing global reach</p>
-            </div>
-          </div>
-        </AnimatedSection>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          <AnimatedElement direction="up" index={0} stagger={0.2}>
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold text-black mb-2">
-                <Counter end={4500} suffix="+" />
-              </div>
-              <p className="text-gray-700">Daily register from new users</p>
-            </div>
-          </AnimatedElement>
-          <AnimatedElement direction="up" index={1} stagger={0.2}>
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold text-black mb-2">
-                <Counter end={1500} suffix="+" />
-              </div>
-              <p className="text-gray-700">Language In the world</p>
-            </div>
-          </AnimatedElement>
-          <AnimatedElement direction="up" index={2} stagger={0.2}>
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold text-black mb-2">
-                <Counter end={1000} suffix="+" />
-              </div>
-              <p className="text-gray-700">Total learners in the world</p>
-            </div>
-          </AnimatedElement>
-        </div>
-      </section>
-
-      {/* Download Section */}
-      <section className="bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 py-16 lg:py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]"></div>
-        <AnimatedSection direction="up" className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <AnimatedText 
-            text="Learn a new language for free download app Now!"
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-8"
-          />
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <GlowEffect className="group">
-              <Button variant="default" size="lg" className="bg-black text-white hover:bg-gray-800 px-6 py-3 flex items-center gap-3">
-                <div className="text-2xl">🍎</div>
-                <div className="text-left">
-                  <div className="text-xs">Download on the</div>
-                  <div className="text-sm font-semibold">App Store</div>
-                </div>
-              </Button>
-            </GlowEffect>
-            <GlowEffect className="group">
-              <Button variant="default" size="lg" className="bg-black text-white hover:bg-gray-800 px-6 py-3 flex items-center gap-3">
-                <div className="text-2xl">▶</div>
-                <div className="text-left">
-                  <div className="text-xs">Disponible sur</div>
-                  <div className="text-sm font-semibold">Google Play</div>
-                </div>
-              </Button>
-            </GlowEffect>
-          </div>
-        </AnimatedSection>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-white py-12 lg:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <AnimatedElement direction="up" index={0} stagger={0.1}>
-              <div>
-                <h3 className="text-2xl font-bold text-black mb-4">Verbalizelt</h3>
-                <p className="text-gray-600 text-sm">
-                  Learning is a global training provider based across the UK that specialises in accredited and bespoke training course.
-                </p>
-              </div>
-            </AnimatedElement>
-            <AnimatedElement direction="up" index={1} stagger={0.1}>
-              <div>
-                <h4 className="font-semibold text-black mb-4">Links</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">About Us</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Service</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Blog</a></li>
-                </ul>
-              </div>
-            </AnimatedElement>
-            <AnimatedElement direction="up" index={2} stagger={0.1}>
-              <div>
-                <h4 className="font-semibold text-black mb-4">Legal</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Terms & Conditions</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Privacy Policy</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Become a Partner</a></li>
-                </ul>
-              </div>
-            </AnimatedElement>
-            <AnimatedElement direction="up" index={3} stagger={0.1}>
-              <div>
-                <h4 className="font-semibold text-black mb-4">Social</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Twitter</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Facebook</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-yellow-500 transition-colors">Instagram</a></li>
-                </ul>
-              </div>
-            </AnimatedElement>
-          </div>
-          <div className="border-t border-gray-200 pt-8">
-            <AnimatedSection direction="fade" className="text-center text-sm text-gray-600">
-              <p>Privacy Policy | Terms & Conditions | Cookies Policy</p>
-            </AnimatedSection>
-          </div>
-        </div>
-      </footer>
+function Rise({
+  children,
+  delay = 0,
+  y = 24,
+  style,
+}: {
+  children: ReactNode;
+  delay?: number;
+  y?: number;
+  style?: CSSProperties;
+}) {
+  const [ref, shown] = useReveal();
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: shown ? 1 : 0,
+        transform: shown ? "translate3d(0,0,0)" : `translate3d(0,${y}px,0)`,
+        transition: `opacity 700ms cubic-bezier(.22,.61,.36,1) ${delay}ms, transform 800ms cubic-bezier(.22,.61,.36,1) ${delay}ms`,
+        willChange: "transform, opacity",
+        ...style,
+      }}
+    >
+      {children}
     </div>
   );
 }
 
-// Counter component for animated numbers
-function Counter({ end, suffix = "" }: { end: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-
+function CountUp({
+  to,
+  duration = 1400,
+  prefix = "",
+  suffix = "",
+}: {
+  to: number;
+  duration?: number;
+  prefix?: string;
+  suffix?: string;
+}) {
+  const [ref, shown] = useReveal({ threshold: 0.4 });
+  const [val, setVal] = useState(0);
   useEffect(() => {
-    const duration = 2000;
-    const steps = 60;
-    const increment = end / steps;
-    const stepDuration = duration / steps;
+    if (!shown) {
+      setVal(0);
+      return;
+    }
+    let raf = 0;
+    let start: number | null = null;
+    const step = (t: number) => {
+      if (start === null) start = t;
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(eased * to);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [shown, to, duration]);
+  return (
+    <span ref={ref}>
+      {prefix}
+      {Math.round(val).toLocaleString()}
+      {suffix}
+    </span>
+  );
+}
 
-    let current = 0;
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(current));
-      }
-    }, stepDuration);
+// ------------------------------------------------------------------
+// Photo placeholder — golden-hour gradient + film grain
+// ------------------------------------------------------------------
+type PhotoTone = "warm" | "porch" | "dusk" | "morning" | "block" | "night";
+function Photo({
+  tone = "warm",
+  label,
+  height = "100%",
+  radius = 20,
+  style,
+  children,
+}: {
+  tone?: PhotoTone;
+  label?: string;
+  height?: number | string;
+  radius?: number;
+  style?: CSSProperties;
+  children?: ReactNode;
+}) {
+  const tones: Record<PhotoTone, string> = {
+    warm: "linear-gradient(160deg,#f3d9b8 0%, #e6b078 32%, #c97a4e 62%, #5e3a31 100%)",
+    porch: "linear-gradient(170deg,#f8e7c8 0%, #e9b274 35%, #a86948 70%, #3e2a25 100%)",
+    dusk: "linear-gradient(180deg,#f0c089 0%, #d18856 45%, #6e3f33 80%, #2c2422 100%)",
+    morning: "linear-gradient(170deg,#f9eedc 0%, #ddb98a 40%, #8e6f5a 80%, #3a2f29 100%)",
+    block: "linear-gradient(165deg,#ead3b0 0%, #c79870 50%, #6b4e3f 100%)",
+    night: "linear-gradient(180deg,#3a2e2a 0%, #2c2422 60%, #1a1614 100%)",
+  };
+  const filterId = `g${(label || "x").replace(/\W/g, "")}`;
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height,
+        borderRadius: radius,
+        overflow: "hidden",
+        background: tones[tone],
+        boxShadow:
+          "0 30px 60px -30px rgba(44,44,42,0.35), 0 8px 24px -12px rgba(44,44,42,0.18)",
+        ...style,
+      }}
+    >
+      <svg
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          opacity: 0.18,
+          mixBlendMode: "overlay",
+          pointerEvents: "none",
+        }}
+      >
+        <filter id={filterId}>
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} stitchTiles="stitch" />
+          <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0.6 0" />
+        </filter>
+        <rect width="100%" height="100%" filter={`url(#${filterId})`} />
+      </svg>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(120% 80% at 50% 30%, transparent 40%, rgba(0,0,0,0.18) 100%)",
+        }}
+      />
+      <svg
+        viewBox="0 0 400 260"
+        preserveAspectRatio="xMidYMax slice"
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.18 }}
+      >
+        <path
+          d="M0 220 L80 180 L120 150 L180 175 L240 140 L300 165 L360 145 L400 170 L400 260 L0 260 Z"
+          fill="#2C2C2A"
+        />
+        <path d="M40 200 L70 175 L100 200 L100 235 L40 235 Z" fill="#2C2C2A" />
+        <path d="M250 195 L290 165 L330 195 L330 240 L250 240 Z" fill="#2C2C2A" />
+      </svg>
+      {label && (
+        <div
+          style={{
+            position: "absolute",
+            left: 14,
+            bottom: 12,
+            fontFamily: F.mono,
+            fontSize: 10,
+            letterSpacing: 0.6,
+            color: "rgba(255,255,255,0.78)",
+            textTransform: "uppercase",
+          }}
+        >
+          {label}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
 
-    return () => clearInterval(timer);
-  }, [end]);
+function Avatar({
+  name,
+  size = 32,
+  tone = "warm",
+}: {
+  name: string;
+  size?: number;
+  tone?: "warm" | "porch" | "dusk" | "morning";
+}) {
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("");
+  const bgs = {
+    warm: "linear-gradient(135deg,#e8b078,#a86948)",
+    porch: "linear-gradient(135deg,#dbb98a,#6e4937)",
+    dusk: "linear-gradient(135deg,#c97a4e,#4a2e29)",
+    morning: "linear-gradient(135deg,#e6c298,#8e6f5a)",
+  };
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: bgs[tone],
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: F.display,
+        fontWeight: 600,
+        fontSize: size * 0.38,
+        letterSpacing: 0.4,
+        flexShrink: 0,
+      }}
+    >
+      {initials}
+    </div>
+  );
+}
 
-  return <span>{count.toLocaleString()}{suffix}</span>;
+// ------------------------------------------------------------------
+// Styled buttons & shared helpers
+// ------------------------------------------------------------------
+function btnPrimary(): CSSProperties {
+  return {
+    background: C.amber,
+    color: C.slate,
+    border: 0,
+    borderRadius: 999,
+    padding: "10px 18px",
+    fontFamily: F.display,
+    fontWeight: 600,
+    fontSize: 13,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    transition: "transform 200ms ease, background 200ms ease",
+  };
+}
+function btnGhost(): CSSProperties {
+  return {
+    background: "transparent",
+    color: C.slate,
+    border: 0,
+    borderRadius: 999,
+    padding: "10px 14px",
+    fontFamily: F.display,
+    fontWeight: 500,
+    fontSize: 13,
+    cursor: "pointer",
+  };
+}
+function btnGhostBordered(): CSSProperties {
+  return {
+    background: "transparent",
+    color: C.slate,
+    border: `1px solid ${C.slate}`,
+    borderRadius: 999,
+    padding: "12px 22px",
+    fontFamily: F.display,
+    fontWeight: 600,
+    fontSize: 14,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    transition: "all 220ms ease",
+  };
+}
+
+function SectionLabel({ num, text }: { num: string; text: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        fontFamily: F.mono,
+        fontSize: 11,
+        color: C.stone,
+        letterSpacing: 1.6,
+        textTransform: "uppercase",
+        marginBottom: 28,
+      }}
+    >
+      <span style={{ width: 32, height: 1, background: C.stoneLine }} />
+      {num} — {text}
+    </div>
+  );
+}
+
+function h2Style(): CSSProperties {
+  return {
+    fontFamily: F.display,
+    fontWeight: 600,
+    fontSize: "clamp(40px, 4.6vw, 64px)",
+    lineHeight: 1.04,
+    letterSpacing: -1.6,
+    color: C.slate,
+    margin: 0,
+    maxWidth: 820,
+  };
+}
+
+// ------------------------------------------------------------------
+// Nav
+// ------------------------------------------------------------------
+function Nav() {
+  const y = useScrollY();
+  const solid = y > 40;
+  return (
+    <nav
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        transition:
+          "background 300ms ease, border-color 300ms ease, backdrop-filter 300ms ease, padding 300ms ease",
+        background: solid ? "rgba(245,240,235,0.82)" : "rgba(245,240,235,0)",
+        backdropFilter: solid ? "saturate(140%) blur(14px)" : "none",
+        WebkitBackdropFilter: solid ? "saturate(140%) blur(14px)" : "none",
+        borderBottom: `1px solid ${solid ? C.stoneLine : "transparent"}`,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: solid ? "14px 32px" : "22px 32px",
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
+          transition: "padding 300ms ease",
+        }}
+      >
+        <a href="#top" style={{ textDecoration: "none", display: "inline-flex" }}>
+          <Wordmark size={22} />
+        </a>
+        <div style={{ flex: 1 }} />
+        <NavLink href="#featured">Find a spot</NavLink>
+        <NavLink href="#calculator">List your driveway</NavLink>
+        <NavLink href="#how">How it works</NavLink>
+        <NavLink href="#trust">Help</NavLink>
+        <div style={{ width: 1, height: 18, background: C.stoneLine }} />
+        <button style={btnGhost()} onClick={() => scrollToId("calculator")}>
+          Sign in
+        </button>
+        <button style={btnPrimary()} onClick={() => scrollToId("calculator")}>
+          Get started
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+function scrollToId(id: string) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function NavLink({ href, children }: { href: string; children: ReactNode }) {
+  const [h, setH] = useState(false);
+  return (
+    <a
+      href={href}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        fontFamily: F.display,
+        fontWeight: 500,
+        fontSize: 14,
+        letterSpacing: -0.1,
+        color: C.slate,
+        textDecoration: "none",
+        position: "relative",
+        padding: "6px 0",
+      }}
+    >
+      {children}
+      <span
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 1.5,
+          background: C.slate,
+          transform: h ? "scaleX(1)" : "scaleX(0)",
+          transformOrigin: "left",
+          transition: "transform 320ms cubic-bezier(.22,.61,.36,1)",
+        }}
+      />
+    </a>
+  );
+}
+
+// ------------------------------------------------------------------
+// Hero
+// ------------------------------------------------------------------
+function Hero() {
+  const y = useScrollY();
+  const parallax = Math.min(80, y * 0.18);
+
+  return (
+    <section
+      id="top"
+      style={{ position: "relative", paddingTop: 120, paddingBottom: 80, scrollMarginTop: 80 }}
+    >
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+        <Rise delay={50}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "6px 12px 6px 8px",
+              borderRadius: 999,
+              background: C.amberSoft,
+              color: C.amberDeep,
+              fontFamily: F.display,
+              fontWeight: 600,
+              fontSize: 12,
+              letterSpacing: 0.1,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: C.amber,
+                boxShadow: `0 0 0 4px ${C.amberSoft}`,
+                animation: "dryvPulse 2.2s ease-in-out infinite",
+              }}
+            />
+            Now in the Bay Area · Coming to LA & Austin
+          </div>
+        </Rise>
+      </div>
+
+      <div
+        style={{
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "24px 32px 0",
+          display: "grid",
+          gridTemplateColumns: "1.15fr 1fr",
+          gap: 64,
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <Rise delay={120} y={28}>
+            <h1
+              style={{
+                fontFamily: F.display,
+                fontWeight: 600,
+                fontSize: "clamp(56px, 7.4vw, 104px)",
+                lineHeight: 0.96,
+                letterSpacing: -2.2,
+                color: C.slate,
+                margin: 0,
+              }}
+            >
+              Your driveway.
+              <br />
+              <span style={{ color: C.slate }}>Their </span>
+              <span style={{ fontFamily: F.body, fontStyle: "italic", fontWeight: 400 }}>
+                destination.
+              </span>
+            </h1>
+          </Rise>
+
+          <Rise delay={260}>
+            <p
+              style={{
+                fontFamily: F.body,
+                fontSize: 20,
+                lineHeight: 1.5,
+                color: C.slate,
+                marginTop: 28,
+                marginBottom: 36,
+                maxWidth: 520,
+                opacity: 0.85,
+              }}
+            >
+              List your space in five minutes. Earn every time someone parks. Or find a spot
+              near the stadium, the airport, the office — and skip the circling.
+            </p>
+          </Rise>
+
+        </div>
+
+        <div style={{ position: "relative", height: 620 }}>
+          <Rise delay={200} y={36} style={{ position: "absolute", inset: 0 }}>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                transform: `translate3d(0,${-parallax * 0.25}px,0)`,
+                transition: "transform 120ms linear",
+              }}
+            >
+              <Photo
+                tone="porch"
+                label="46 Almond St · Mission · 4:42 PM"
+                height="100%"
+                radius={28}
+              />
+            </div>
+          </Rise>
+
+          <Rise
+            delay={520}
+            y={18}
+            style={{ position: "absolute", left: -32, bottom: 56, zIndex: 2 }}
+          >
+            <div
+              style={{
+                background: C.paper,
+                borderRadius: 18,
+                padding: 16,
+                border: `1px solid ${C.stoneLine}`,
+                boxShadow:
+                  "0 24px 60px -24px rgba(44,44,42,0.4), 0 6px 16px -8px rgba(44,44,42,0.18)",
+                width: 240,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Avatar name="Wayne O." tone="porch" size={36} />
+                <div>
+                  <div
+                    style={{
+                      fontFamily: F.display,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      color: C.slate,
+                    }}
+                  >
+                    Wayne · Mission District
+                  </div>
+                  <div style={{ fontFamily: F.display, fontSize: 11, color: C.stone }}>
+                    Booked · Sat 6–11 PM
+                  </div>
+                </div>
+              </div>
+              <div style={{ height: 1, background: C.stoneLine, margin: "14px 0" }} />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                }}
+              >
+                <span style={{ fontFamily: F.display, fontSize: 12, color: C.stone }}>
+                  Tonight
+                </span>
+                <span
+                  style={{
+                    fontFamily: F.display,
+                    fontWeight: 600,
+                    fontSize: 22,
+                    color: C.slate,
+                    letterSpacing: -0.5,
+                  }}
+                >
+                  +$<CountUp to={42} duration={1100} />
+                </span>
+              </div>
+            </div>
+          </Rise>
+
+          <Rise
+            delay={620}
+            y={18}
+            style={{ position: "absolute", right: -24, top: 60, zIndex: 2 }}
+          >
+            <div
+              style={{
+                background: C.paper,
+                borderRadius: 18,
+                padding: "12px 14px",
+                border: `1px solid ${C.stoneLine}`,
+                boxShadow: "0 18px 40px -18px rgba(44,44,42,0.35)",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                width: 240,
+              }}
+            >
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  background: C.amberSoft,
+                  color: C.amberDeep,
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="pin-fill" size={18} color={C.amberDeep} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: F.display,
+                    fontWeight: 600,
+                    fontSize: 13,
+                    color: C.slate,
+                  }}
+                >
+                  4 min walk to gate
+                </div>
+                <div style={{ fontFamily: F.display, fontSize: 11, color: C.stone }}>
+                  Maria’s · $8/hr · 4.9 ★
+                </div>
+              </div>
+            </div>
+          </Rise>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 100, overflow: "hidden", position: "relative" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            background:
+              "linear-gradient(90deg, #F5F0EB, transparent 8%, transparent 92%, #F5F0EB)",
+            zIndex: 1,
+          }}
+        />
+        <div
+          style={{
+            display: "flex",
+            gap: 56,
+            animation: "dryvMarquee 38s linear infinite",
+            width: "max-content",
+          }}
+        >
+          {[0, 1].map((k) =>
+            [
+              "Mission District",
+              "SoMa",
+              "Oakland Hills",
+              "Santa Clara",
+              "Berkeley",
+              "Palo Alto",
+              "The Sunset",
+              "Hayes Valley",
+              "Fruitvale",
+              "San Mateo",
+            ].map((n, i) => (
+              <div
+                key={`${k}-${i}`}
+                style={{
+                  fontFamily: F.display,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: C.stone,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 56,
+                }}
+              >
+                {n}
+                <span
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: 999,
+                    background: C.stoneSoft,
+                  }}
+                />
+              </div>
+            )),
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------------
+// Two-sided
+// ------------------------------------------------------------------
+function SideCard({
+  tone,
+  tag,
+  tagIcon,
+  title,
+  body,
+  cta,
+  delay = 0,
+  amber,
+}: {
+  tone: PhotoTone;
+  tag: string;
+  tagIcon: IconName;
+  title: string;
+  body: string;
+  cta: string;
+  delay?: number;
+  amber?: boolean;
+}) {
+  const [h, setH] = useState(false);
+  return (
+    <Rise delay={delay} y={28}>
+      <div
+        onMouseEnter={() => setH(true)}
+        onMouseLeave={() => setH(false)}
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          background: C.paper,
+          borderRadius: 28,
+          border: `1px solid ${C.stoneLine}`,
+          padding: 0,
+          transform: h ? "translateY(-4px)" : "translateY(0)",
+          boxShadow: h
+            ? "0 36px 70px -30px rgba(44,44,42,0.4)"
+            : "0 20px 50px -28px rgba(44,44,42,0.25)",
+          transition:
+            "transform 360ms cubic-bezier(.22,.61,.36,1), box-shadow 360ms cubic-bezier(.22,.61,.36,1)",
+        }}
+      >
+        <div style={{ height: 280, position: "relative" }}>
+          <Photo tone={tone} radius={0} height="100%" />
+          <div
+            style={{
+              position: "absolute",
+              top: 18,
+              left: 18,
+              background: "rgba(245,240,235,0.92)",
+              borderRadius: 999,
+              padding: "6px 12px 6px 8px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontFamily: F.display,
+              fontSize: 12,
+              fontWeight: 600,
+              color: C.slate,
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            <span
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                background: C.slate,
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <Icon name={tagIcon} size={12} color={C.warm} />
+            </span>
+            {tag}
+          </div>
+        </div>
+        <div style={{ padding: 32 }}>
+          <h3
+            style={{
+              fontFamily: F.display,
+              fontWeight: 600,
+              fontSize: 28,
+              lineHeight: 1.12,
+              letterSpacing: -0.6,
+              color: C.slate,
+              margin: 0,
+              maxWidth: 440,
+            }}
+          >
+            {title}
+          </h3>
+          <p
+            style={{
+              fontFamily: F.body,
+              fontSize: 17,
+              lineHeight: 1.55,
+              color: C.slate,
+              opacity: 0.78,
+              marginTop: 16,
+              marginBottom: 28,
+              maxWidth: 460,
+            }}
+          >
+            {body}
+          </p>
+          <button style={amber ? btnPrimary() : btnGhostBordered()}>
+            {cta}{" "}
+            <Icon name="arrow-r" size={14} color={amber ? C.warm : C.slate} stroke={2} />
+          </button>
+        </div>
+      </div>
+    </Rise>
+  );
+}
+
+function TwoSided() {
+  return (
+    <section
+      id="marketplace"
+      style={{ padding: "120px 32px 80px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+    >
+      <Rise>
+        <SectionLabel num="01" text="The marketplace" />
+      </Rise>
+      <Rise delay={80}>
+        <h2 style={h2Style()}>
+          Two people who could never <br />
+          find each other, now do.
+        </h2>
+      </Rise>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 28,
+          marginTop: 64,
+        }}
+      >
+        <SideCard
+          tone="dusk"
+          tag="For Dru"
+          tagIcon="car"
+          title="Find a spot near the stadium, the airport, the office."
+          body="Skip the circling. Reserve in thirty seconds. Pull in, walk five minutes, arrive."
+          cta="Find a spot"
+          delay={80}
+        />
+        <SideCard
+          tone="porch"
+          tag="For Wayne"
+          tagIcon="house"
+          title="List your driveway. Earn while it sits empty."
+          body="Five minutes to list. You set the hours. Paid every Friday, directly to your bank."
+          cta="List your driveway"
+          delay={180}
+          amber
+        />
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------------
+// Featured driveways
+// ------------------------------------------------------------------
+type Listing = {
+  host: string;
+  tone: PhotoTone;
+  neighborhood: string;
+  city: string;
+  price: number;
+  rating: number;
+  reviews: number;
+  landmark: string;
+  miles: number;
+  covered: boolean;
+};
+
+const LISTINGS: Listing[] = [
+  {
+    host: "Maria",
+    tone: "porch",
+    neighborhood: "Mission District",
+    city: "San Francisco",
+    price: 8,
+    rating: 4.9,
+    reviews: 142,
+    landmark: "Oracle Park",
+    miles: 0.4,
+    covered: false,
+  },
+  {
+    host: "Jamal",
+    tone: "dusk",
+    neighborhood: "Inner Sunset",
+    city: "San Francisco",
+    price: 6,
+    rating: 4.8,
+    reviews: 98,
+    landmark: "Golden Gate Park",
+    miles: 0.2,
+    covered: true,
+  },
+  {
+    host: "Lena",
+    tone: "morning",
+    neighborhood: "Rockridge",
+    city: "Oakland",
+    price: 5,
+    rating: 5.0,
+    reviews: 67,
+    landmark: "BART",
+    miles: 0.1,
+    covered: false,
+  },
+  {
+    host: "Theo",
+    tone: "block",
+    neighborhood: "Santa Clara",
+    city: "Santa Clara",
+    price: 14,
+    rating: 4.9,
+    reviews: 215,
+    landmark: "Levi’s Stadium",
+    miles: 0.6,
+    covered: false,
+  },
+  {
+    host: "Priya",
+    tone: "warm",
+    neighborhood: "Hayes Valley",
+    city: "San Francisco",
+    price: 9,
+    rating: 4.9,
+    reviews: 88,
+    landmark: "Civic Center",
+    miles: 0.3,
+    covered: true,
+  },
+  {
+    host: "Daniel",
+    tone: "porch",
+    neighborhood: "North Beach",
+    city: "San Francisco",
+    price: 7,
+    rating: 4.7,
+    reviews: 54,
+    landmark: "Coit Tower",
+    miles: 0.5,
+    covered: false,
+  },
+];
+
+function RailBtn({ onClick, icon }: { onClick: () => void; icon: IconName }) {
+  const [h, setH] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: "50%",
+        border: `1px solid ${C.stoneLine}`,
+        background: h ? C.slate : C.paper,
+        color: h ? C.warm : C.slate,
+        display: "grid",
+        placeItems: "center",
+        cursor: "pointer",
+        transition: "all 220ms ease",
+      }}
+    >
+      <Icon name={icon} size={16} stroke={2} />
+    </button>
+  );
+}
+
+function ListingCard(props: Listing) {
+  const { host, tone, neighborhood, city, price, rating, reviews, landmark, miles, covered } =
+    props;
+  const [h, setH] = useState(false);
+  const [fav, setFav] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{ flex: "0 0 340px", scrollSnapAlign: "start", cursor: "pointer" }}
+    >
+      <div style={{ position: "relative" }}>
+        <Photo tone={tone} height={300} radius={22} label={`${host} · ${neighborhood}`} />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setFav(!fav);
+          }}
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 14,
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            background: "rgba(245,240,235,0.9)",
+            border: 0,
+            display: "grid",
+            placeItems: "center",
+            cursor: "pointer",
+            backdropFilter: "blur(6px)",
+            transform: fav ? "scale(1.08)" : "scale(1)",
+            transition: "transform 240ms cubic-bezier(.22,.61,.36,1)",
+          }}
+        >
+          <Icon name="heart" size={16} color={fav ? C.amberDeep : C.slate} stroke={2} />
+        </button>
+        {covered && (
+          <div
+            style={{
+              position: "absolute",
+              top: 14,
+              left: 14,
+              background: "rgba(245,240,235,0.9)",
+              backdropFilter: "blur(6px)",
+              padding: "4px 10px",
+              borderRadius: 999,
+              fontFamily: F.display,
+              fontWeight: 600,
+              fontSize: 11,
+              color: C.slate,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Icon name="cover" size={11} color={C.slate} stroke={2} /> Covered
+          </div>
+        )}
+      </div>
+      <div
+        style={{
+          paddingTop: 14,
+          transform: h ? "translateY(-2px)" : "translateY(0)",
+          transition: "transform 240ms ease",
+        }}
+      >
+        <div
+          style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}
+        >
+          <div
+            style={{
+              fontFamily: F.display,
+              fontWeight: 600,
+              fontSize: 15,
+              color: C.slate,
+              letterSpacing: -0.2,
+            }}
+          >
+            {host}’s driveway · {neighborhood}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+              fontFamily: F.display,
+              fontSize: 13,
+              color: C.slate,
+            }}
+          >
+            <Icon name="star" size={12} color={C.amber} /> {rating}
+          </div>
+        </div>
+        <div style={{ fontFamily: F.body, fontSize: 14, color: C.stone, marginTop: 4 }}>
+          {miles} mi from {landmark} · {city}
+        </div>
+        <div style={{ marginTop: 10, fontFamily: F.display, fontSize: 15, color: C.slate }}>
+          <strong style={{ fontWeight: 600, letterSpacing: -0.2 }}>${price}</strong>
+          <span style={{ color: C.stone, fontWeight: 400 }}>
+            {" "}
+            /hour · {reviews} reviews
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeaturedRail() {
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const scrollBy = (dx: number) =>
+    railRef.current && railRef.current.scrollBy({ left: dx, behavior: "smooth" });
+
+  return (
+    <section id="featured" style={{ padding: "60px 0 100px", scrollMarginTop: 80 }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+        <Rise>
+          <SectionLabel num="02" text="Featured driveways" />
+        </Rise>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 32,
+          }}
+        >
+          <Rise delay={80}>
+            <h2 style={h2Style()}>
+              Real driveways. Real prices. <br />
+              Real{" "}
+              <span
+                style={{ fontFamily: F.body, fontStyle: "italic", fontWeight: 400 }}
+              >
+                neighbours
+              </span>
+              .
+            </h2>
+          </Rise>
+          <Rise delay={160}>
+            <div style={{ display: "flex", gap: 8, paddingBottom: 8 }}>
+              <RailBtn onClick={() => scrollBy(-360)} icon="arrow-l" />
+              <RailBtn onClick={() => scrollBy(360)} icon="arrow-r" />
+            </div>
+          </Rise>
+        </div>
+      </div>
+
+      <div
+        ref={railRef}
+        className="rail"
+        style={{
+          display: "flex",
+          gap: 20,
+          overflowX: "auto",
+          overflowY: "visible",
+          padding: "36px 32px 24px",
+          scrollSnapType: "x mandatory",
+          maxWidth: 1280,
+          margin: "0 auto",
+        }}
+      >
+        {LISTINGS.map((l, i) => (
+          <Rise key={i} delay={i * 60} y={20}>
+            <ListingCard {...l} />
+          </Rise>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------------
+// How it works
+// ------------------------------------------------------------------
+type StepDef = { icon: IconName; title: string; body: string };
+
+const DRU_STEPS: StepDef[] = [
+  {
+    icon: "search",
+    title: "Search your destination.",
+    body: "Type the stadium, the airport, the block. We show every nearby driveway, sorted by walk time.",
+  },
+  {
+    icon: "check-circle",
+    title: "Reserve in thirty seconds.",
+    body: "Pick your window. Pay once. The host gets a heads-up. Your spot is held the whole time.",
+  },
+  {
+    icon: "car",
+    title: "Pull in and park.",
+    body: "Address, photos, and door code in your pocket. Walk five minutes. Make the kickoff.",
+  },
+];
+const WAYNE_STEPS: StepDef[] = [
+  {
+    icon: "house",
+    title: "List in five minutes.",
+    body: "Three photos, a few measurements, your address. We handle the listing copy.",
+  },
+  {
+    icon: "clock",
+    title: "Set your hours.",
+    body: "Weekends only. Game nights. Mornings while you’re at work. Your call, anytime.",
+  },
+  {
+    icon: "wallet",
+    title: "Get paid weekly.",
+    body: "Direct deposit every Friday. No invoices. No chasing. We hold the funds, you receive them.",
+  },
+];
+
+function SideToggle({
+  side,
+  setSide,
+}: {
+  side: "dru" | "wayne";
+  setSide: (s: "dru" | "wayne") => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        padding: 4,
+        borderRadius: 999,
+        background: C.warmDeep,
+        position: "relative",
+      }}
+    >
+      {(["dru", "wayne"] as const).map((s) => (
+        <button
+          key={s}
+          onClick={() => setSide(s)}
+          style={{
+            position: "relative",
+            zIndex: 1,
+            background: "transparent",
+            border: 0,
+            cursor: "pointer",
+            padding: "10px 22px",
+            borderRadius: 999,
+            fontFamily: F.display,
+            fontWeight: 600,
+            fontSize: 13,
+            color: side === s ? C.warm : C.slate,
+            transition: "color 280ms ease",
+            minWidth: 130,
+          }}
+        >
+          For {s === "dru" ? "Dru" : "Wayne"}
+        </button>
+      ))}
+      <div
+        style={{
+          position: "absolute",
+          top: 4,
+          bottom: 4,
+          width: "calc(50% - 4px)",
+          left: side === "dru" ? 4 : "calc(50%)",
+          background: C.slate,
+          borderRadius: 999,
+          transition: "left 380ms cubic-bezier(.22,.61,.36,1)",
+        }}
+      />
+    </div>
+  );
+}
+
+function Step({ n, icon, title, body }: { n: number; icon: IconName; title: string; body: string }) {
+  return (
+    <div>
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 18,
+          background: C.paper,
+          border: `1px solid ${C.stoneLine}`,
+          display: "grid",
+          placeItems: "center",
+          boxShadow: "0 12px 28px -16px rgba(44,44,42,0.25)",
+        }}
+      >
+        <Icon name={icon} size={28} color={C.slate} stroke={1.6} />
+      </div>
+      <div
+        style={{
+          fontFamily: F.mono,
+          fontSize: 11,
+          color: C.stone,
+          letterSpacing: 1.5,
+          marginTop: 24,
+          textTransform: "uppercase",
+        }}
+      >
+        Step {String(n).padStart(2, "0")}
+      </div>
+      <h3
+        style={{
+          fontFamily: F.display,
+          fontWeight: 600,
+          fontSize: 24,
+          lineHeight: 1.18,
+          letterSpacing: -0.5,
+          color: C.slate,
+          marginTop: 10,
+          marginBottom: 12,
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        style={{
+          fontFamily: F.body,
+          fontSize: 16,
+          lineHeight: 1.55,
+          color: C.slate,
+          opacity: 0.75,
+          margin: 0,
+        }}
+      >
+        {body}
+      </p>
+    </div>
+  );
+}
+
+function HowItWorks() {
+  const [side, setSide] = useState<"dru" | "wayne">("dru");
+  const steps = side === "dru" ? DRU_STEPS : WAYNE_STEPS;
+  return (
+    <section
+      id="how"
+      style={{ padding: "120px 32px 100px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+    >
+      <Rise>
+        <SectionLabel num="03" text="How it works" />
+      </Rise>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: 32,
+          flexWrap: "wrap",
+        }}
+      >
+        <Rise delay={80}>
+          <h2 style={h2Style()}>
+            Six steps, three for each side. <br />
+            That is the entire product.
+          </h2>
+        </Rise>
+        <Rise delay={140}>
+          <SideToggle side={side} setSide={setSide} />
+        </Rise>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3,1fr)",
+          gap: 28,
+          marginTop: 80,
+        }}
+      >
+        {steps.map((s, i) => (
+          <Rise key={side + i} delay={i * 100} y={24}>
+            <Step n={i + 1} {...s} />
+          </Rise>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------------
+// Trust
+// ------------------------------------------------------------------
+const PILLARS: { icon: IconName; title: string; body: string }[] = [
+  {
+    icon: "check-circle",
+    title: "Verified hosts",
+    body: "ID, address, and home photos checked before any driveway goes live.",
+  },
+  {
+    icon: "shield",
+    title: "Insured parking",
+    body: "Every booking covered up to $1M, on both sides of the marketplace.",
+  },
+  {
+    icon: "star",
+    title: "Real reviews",
+    body: "Only verified drivers leave reviews. No fakes. No bots. Ever.",
+  },
+  {
+    icon: "phone",
+    title: "Local support",
+    body: "A real person, in your city, picks up within sixty seconds.",
+  },
+];
+
+const REVIEWS = [
+  {
+    quote:
+      "“Beat $48 stadium parking by $32. Walked four minutes. Got home an hour earlier than I would have.”",
+    who: "Andre · Berkeley · Apr 2026",
+  },
+  {
+    quote: "“It paid for the new water heater. The driveway sits empty Tuesdays anyway.”",
+    who: "Jen · Oakland Hills · Mar 2026",
+  },
+  {
+    quote:
+      "“I list during games, vacations, and weekdays I’m at the office. About $640 last month.”",
+    who: "Marcus · Santa Clara · Feb 2026",
+  },
+];
+
+function Trust() {
+  return (
+    <section
+      id="trust"
+      style={{ padding: "20px 32px 100px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+    >
+      <Rise>
+        <SectionLabel num="04" text="Trust, in plain sight" />
+      </Rise>
+      <Rise delay={80}>
+        <h2 style={h2Style()}>
+          Trust is the product. <br />
+          <span style={{ color: C.stone }}>Everything else is decoration.</span>
+        </h2>
+      </Rise>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4,1fr)",
+          gap: 20,
+          marginTop: 56,
+        }}
+      >
+        {PILLARS.map((p, i) => (
+          <Rise key={i} delay={i * 80} y={20}>
+            <div
+              style={{
+                padding: 24,
+                borderRadius: 20,
+                background: C.warmSoftest,
+                border: `1px solid ${C.stoneLineSoft}`,
+                height: "100%",
+              }}
+            >
+              <Icon name={p.icon} size={22} color={C.slate} stroke={1.6} />
+              <h4
+                style={{
+                  fontFamily: F.display,
+                  fontWeight: 600,
+                  fontSize: 17,
+                  color: C.slate,
+                  margin: "14px 0 8px",
+                  letterSpacing: -0.2,
+                }}
+              >
+                {p.title}
+              </h4>
+              <p
+                style={{
+                  fontFamily: F.body,
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: C.slate,
+                  opacity: 0.72,
+                  margin: 0,
+                }}
+              >
+                {p.body}
+              </p>
+            </div>
+          </Rise>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3,1fr)",
+          gap: 28,
+          marginTop: 56,
+        }}
+      >
+        {REVIEWS.map((r, i) => (
+          <Rise key={i} delay={i * 100} y={18}>
+            <figure style={{ margin: 0 }}>
+              <div style={{ display: "flex", gap: 2, marginBottom: 14 }}>
+                {[0, 1, 2, 3, 4].map((s) => (
+                  <Icon key={s} name="star" size={14} color={C.amber} />
+                ))}
+              </div>
+              <blockquote
+                style={{
+                  fontFamily: F.body,
+                  fontSize: 19,
+                  lineHeight: 1.5,
+                  color: C.slate,
+                  margin: 0,
+                }}
+              >
+                {r.quote}
+              </blockquote>
+              <figcaption
+                style={{
+                  fontFamily: F.display,
+                  fontSize: 13,
+                  color: C.stone,
+                  marginTop: 14,
+                }}
+              >
+                {r.who}
+              </figcaption>
+            </figure>
+          </Rise>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------------
+// Calculator
+// ------------------------------------------------------------------
+const CITIES = [
+  {
+    key: "sc",
+    name: "Santa Clara",
+    rate: 11,
+    hours: 95,
+    vibe: "Game nights + weekday commuters",
+  },
+  {
+    key: "sf",
+    name: "San Francisco",
+    rate: 8,
+    hours: 110,
+    vibe: "Stadiums, concerts, downtown",
+  },
+  {
+    key: "oak",
+    name: "Oakland",
+    rate: 6,
+    hours: 85,
+    vibe: "BART-adjacent, A’s + Warriors",
+  },
+  {
+    key: "pa",
+    name: "Palo Alto",
+    rate: 9,
+    hours: 70,
+    vibe: "Office commuters, no street parking",
+  },
+  {
+    key: "sm",
+    name: "San Mateo",
+    rate: 7,
+    hours: 60,
+    vibe: "CalTrain, airport overflow",
+  },
+] as const;
+
+function Calculator() {
+  const [cityKey, setCityKey] = useState<(typeof CITIES)[number]["key"]>("sc");
+  const city = CITIES.find((c) => c.key === cityKey)!;
+  const [hours, setHours] = useState<number>(city.hours);
+  useEffect(() => {
+    setHours(city.hours);
+  }, [city.hours]);
+  const monthly = Math.round(city.rate * hours * 0.92);
+  const yearly = monthly * 12;
+  const [ref, shown] = useReveal({ threshold: 0.25 });
+
+  return (
+    <section
+      ref={ref}
+      id="calculator"
+      style={{ padding: "80px 32px 120px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+    >
+      <Rise>
+        <SectionLabel num="05" text="Earnings calculator" />
+      </Rise>
+      <Rise delay={80}>
+        <h2 style={h2Style()}>
+          See what your driveway <br />
+          could earn this month.
+        </h2>
+      </Rise>
+
+      <div
+        style={{
+          marginTop: 56,
+          background: C.slate,
+          color: C.warm,
+          borderRadius: 32,
+          padding: 40,
+          display: "grid",
+          gridTemplateColumns: "1fr 1.1fr",
+          gap: 56,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <svg
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.05 }}
+        >
+          <defs>
+            <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+              <path d="M 48 0 L 0 0 0 48" fill="none" stroke={C.warm} strokeWidth={1} />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div
+            style={{
+              fontFamily: F.mono,
+              fontSize: 11,
+              letterSpacing: 1.5,
+              color: C.stoneSoft,
+              textTransform: "uppercase",
+            }}
+          >
+            Where is your driveway?
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+            {CITIES.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setCityKey(c.key)}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 999,
+                  border: `1px solid ${
+                    cityKey === c.key ? C.amber : "rgba(245,240,235,0.16)"
+                  }`,
+                  background: cityKey === c.key ? C.amberSoft : "transparent",
+                  color: cityKey === c.key ? C.amber : C.warm,
+                  fontFamily: F.display,
+                  fontWeight: 500,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  transition: "all 220ms ease",
+                }}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
+          <div
+            style={{
+              marginTop: 36,
+              fontFamily: F.mono,
+              fontSize: 11,
+              letterSpacing: 1.5,
+              color: C.stoneSoft,
+              textTransform: "uppercase",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+            }}
+          >
+            <span>Hours you’d list it · per month</span>
+            <span
+              style={{
+                color: C.warm,
+                fontFamily: F.display,
+                fontSize: 14,
+                letterSpacing: 0,
+                textTransform: "none",
+              }}
+            >
+              {hours} hrs
+            </span>
+          </div>
+          <input
+            type="range"
+            min={20}
+            max={200}
+            step={5}
+            value={hours}
+            onChange={(e) => setHours(+e.target.value)}
+            style={{ width: "100%", marginTop: 14, accentColor: C.amber, height: 4 }}
+          />
+          <div
+            style={{
+              marginTop: 30,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: 16,
+              borderRadius: 16,
+              background: "rgba(245,240,235,0.05)",
+              border: "1px solid rgba(245,240,235,0.08)",
+            }}
+          >
+            <Icon name="sun" size={20} color={C.amber} />
+            <div
+              style={{
+                fontFamily: F.body,
+                fontSize: 14,
+                lineHeight: 1.5,
+                color: C.warm,
+                opacity: 0.85,
+              }}
+            >
+              {city.vibe}.
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontFamily: F.mono,
+                fontSize: 11,
+                letterSpacing: 1.5,
+                color: C.stoneSoft,
+                textTransform: "uppercase",
+              }}
+            >
+              Estimated monthly earnings
+            </div>
+            <div
+              style={{
+                fontFamily: F.display,
+                fontWeight: 600,
+                fontSize: "clamp(72px, 8vw, 128px)",
+                lineHeight: 0.95,
+                letterSpacing: -3,
+                marginTop: 16,
+                color: C.amber,
+              }}
+            >
+              ${shown ? <CountUp to={monthly} duration={1400} key={monthly} /> : 0}
+            </div>
+            <div
+              style={{
+                fontFamily: F.body,
+                fontSize: 18,
+                color: C.warm,
+                opacity: 0.7,
+                marginTop: 4,
+              }}
+            >
+              ≈ ${yearly.toLocaleString()} per year
+            </div>
+          </div>
+
+          <div style={{ marginTop: 40 }}>
+            <div
+              style={{
+                fontFamily: F.mono,
+                fontSize: 11,
+                letterSpacing: 1.5,
+                color: C.stoneSoft,
+                textTransform: "uppercase",
+                marginBottom: 14,
+              }}
+            >
+              When you’ll earn it
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 96 }}>
+              {[28, 46, 32, 38, 72, 88, 56].map((v, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    height: "100%",
+                  }}
+                >
+                  <div style={{ flex: 1, display: "flex", alignItems: "flex-end" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        background:
+                          i === 4 || i === 5 ? C.amber : "rgba(245,240,235,0.2)",
+                        height: shown ? `${v}%` : 0,
+                        borderRadius: 4,
+                        transition: `height 1100ms cubic-bezier(.22,.61,.36,1) ${i * 60}ms`,
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: F.mono,
+                      fontSize: 10,
+                      color: C.stoneSoft,
+                      marginTop: 6,
+                      textAlign: "center",
+                    }}
+                  >
+                    {["M", "T", "W", "T", "F", "S", "S"][i]}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            style={{
+              marginTop: 36,
+              alignSelf: "flex-start",
+              background: C.amber,
+              color: C.slate,
+              border: 0,
+              borderRadius: 999,
+              padding: "14px 24px",
+              fontFamily: F.display,
+              fontWeight: 600,
+              fontSize: 14,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              boxShadow: "0 12px 30px -8px rgba(232,160,64,0.45)",
+            }}
+          >
+            Start your listing <Icon name="arrow-r" size={14} color={C.slate} stroke={2.2} />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------------
+// Origin story
+// ------------------------------------------------------------------
+function Story() {
+  return (
+    <section id="story" style={{ padding: "80px 0 100px", scrollMarginTop: 80 }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+        <Rise>
+          <SectionLabel num="06" text="Where we started" />
+        </Rise>
+      </div>
+
+      <Rise delay={80} y={24}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+          <Photo
+            tone="dusk"
+            label="Tasman Drive, Santa Clara · 5:08 PM, a Sunday in November"
+            height={460}
+            radius={28}
+          />
+        </div>
+      </Rise>
+
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "64px 32px 0" }}>
+        <Rise delay={80}>
+          <p
+            style={{
+              fontFamily: F.body,
+              fontSize: 22,
+              lineHeight: 1.55,
+              color: C.slate,
+              margin: 0,
+            }}
+          >
+            It started on a Sunday in November, a few blocks from Levi’s Stadium. There was a
+            game at four. By two, the cars were circling — slow, frustrated, looking for
+            somewhere to leave a vehicle for three hours and a half. From a porch, a homeowner
+            watched, and noticed: his own driveway, the one his car was not parked on, was
+            empty.
+          </p>
+        </Rise>
+        <Rise delay={180}>
+          <p
+            style={{
+              fontFamily: F.body,
+              fontSize: 22,
+              lineHeight: 1.55,
+              color: C.slate,
+              margin: "28px 0 0",
+            }}
+          >
+            That afternoon, a driver paid him $25. They shook hands. The next weekend, the
+            same driver came back. By spring, the porch had a clipboard. By summer, a
+            neighbour was doing it too.
+          </p>
+        </Rise>
+        <Rise delay={280}>
+          <p
+            style={{
+              fontFamily: F.display,
+              fontSize: 16,
+              color: C.slate,
+              opacity: 0.7,
+              marginTop: 56,
+              fontStyle: "italic",
+            }}
+          >
+            We are not a tech platform. We are a neighbour.
+          </p>
+        </Rise>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------------------------------------------
+// Final CTA + Footer
+// ------------------------------------------------------------------
+function FinalCTA() {
+  return (
+    <section style={{ background: C.slate, color: C.warm, position: "relative", overflow: "hidden" }}>
+      <div
+        style={{
+          position: "absolute",
+          right: -120,
+          top: 40,
+          opacity: 0.08,
+          transform: "rotate(-12deg)",
+        }}
+      >
+        <Icon name="pin-fill" size={520} color={C.amber} />
+      </div>
+
+      <div
+        style={{
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "160px 32px 120px",
+          position: "relative",
+        }}
+      >
+        <Rise>
+          <div
+            style={{
+              fontFamily: F.mono,
+              fontSize: 11,
+              letterSpacing: 1.5,
+              color: C.stoneSoft,
+              textTransform: "uppercase",
+            }}
+          >
+            One last thing
+          </div>
+        </Rise>
+        <Rise delay={100}>
+          <h2
+            style={{
+              fontFamily: F.display,
+              fontWeight: 600,
+              fontSize: "clamp(48px, 6.4vw, 96px)",
+              lineHeight: 1.0,
+              letterSpacing: -2,
+              color: C.warm,
+              margin: "24px 0 0",
+              maxWidth: 1000,
+            }}
+          >
+            That driveway down the street is{" "}
+            <span
+              style={{
+                fontFamily: F.body,
+                fontStyle: "italic",
+                fontWeight: 400,
+                color: C.amber,
+              }}
+            >
+              still sitting empty.
+            </span>
+          </h2>
+        </Rise>
+        <Rise delay={220}>
+          <div style={{ display: "flex", gap: 14, marginTop: 56, flexWrap: "wrap" }}>
+            <button
+              style={{
+                background: C.amber,
+                color: C.slate,
+                border: 0,
+                borderRadius: 999,
+                padding: "18px 30px",
+                fontFamily: F.display,
+                fontWeight: 600,
+                fontSize: 16,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                cursor: "pointer",
+                boxShadow: "0 14px 40px -12px rgba(232,160,64,0.5)",
+              }}
+            >
+              Find a spot <Icon name="arrow-r" size={16} color={C.slate} stroke={2.2} />
+            </button>
+            <button
+              style={{
+                background: "transparent",
+                color: C.warm,
+                border: "1px solid rgba(245,240,235,0.28)",
+                borderRadius: 999,
+                padding: "18px 30px",
+                fontFamily: F.display,
+                fontWeight: 600,
+                fontSize: 16,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                cursor: "pointer",
+              }}
+            >
+              List your driveway <Icon name="arrow-r" size={16} color={C.warm} stroke={2.2} />
+            </button>
+          </div>
+        </Rise>
+      </div>
+    </section>
+  );
+}
+
+function FootCol({ title, links }: { title: string; links: string[] }) {
+  return (
+    <div>
+      <div
+        style={{
+          fontFamily: F.display,
+          fontWeight: 600,
+          fontSize: 13,
+          color: C.warm,
+          marginBottom: 18,
+          letterSpacing: -0.1,
+        }}
+      >
+        {title}
+      </div>
+      <ul
+        style={{
+          listStyle: "none",
+          margin: 0,
+          padding: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+        }}
+      >
+        {links.map((l) => (
+          <li key={l}>
+            <a
+              href="#"
+              style={{
+                fontFamily: F.body,
+                fontSize: 14,
+                color: C.warm,
+                opacity: 0.65,
+                textDecoration: "none",
+              }}
+            >
+              {l}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{ background: C.slate, color: C.warm, paddingTop: 4 }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px 56px" }}>
+        <div style={{ height: 1, background: "rgba(245,240,235,0.12)" }} />
+        <div
+          style={{
+            paddingTop: 56,
+            display: "grid",
+            gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
+            gap: 40,
+          }}
+        >
+          <div>
+            <Wordmark color={C.warm} accent={C.amber} size={22} />
+            <p
+              style={{
+                fontFamily: F.body,
+                fontSize: 14,
+                lineHeight: 1.55,
+                color: C.warm,
+                opacity: 0.6,
+                marginTop: 16,
+                maxWidth: 280,
+              }}
+            >
+              We started in California. We are coming to your block.
+            </p>
+          </div>
+          <FootCol
+            title="Product"
+            links={["Find a spot", "List your driveway", "How it works", "Trust & safety"]}
+          />
+          <FootCol
+            title="Cities"
+            links={[
+              "San Francisco",
+              "Oakland",
+              "Santa Clara",
+              "Palo Alto",
+              "San Mateo",
+              "Berkeley",
+            ]}
+          />
+          <FootCol
+            title="Company"
+            links={["Our story", "Careers", "Press", "Help center"]}
+          />
+        </div>
+        <div
+          style={{
+            marginTop: 64,
+            paddingTop: 24,
+            borderTop: "1px solid rgba(245,240,235,0.12)",
+            display: "flex",
+            justifyContent: "space-between",
+            fontFamily: F.display,
+            fontSize: 12,
+            color: C.warm,
+            opacity: 0.5,
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
+          <span>© 2026 Dryvway, Inc.</span>
+          <span>Privacy · Terms · Insurance</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ------------------------------------------------------------------
+// Page
+// ------------------------------------------------------------------
+export default function Page() {
+  return (
+    <div style={{ background: C.warm, minHeight: "100vh", overflowX: "hidden" }}>
+      <Nav />
+      <Hero />
+      <TwoSided />
+      <FeaturedRail />
+      <HowItWorks />
+      <Trust />
+      <Calculator />
+      <Story />
+      <FinalCTA />
+      <Footer />
+    </div>
+  );
 }

@@ -1,20 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "Verbalizelt - Learn a New Language the Fun Way",
-  description: "We help you learn language easily, with small lessons, you'll earn points and unlock new levels while improving your real world communications.",
+  title: "Dryvway — Your driveway. Their destination.",
+  description:
+    "List your driveway in five minutes and earn every time someone parks. Or find a spot near the stadium, the airport, the office — and skip the circling.",
 };
 
 export default function RootLayout({
@@ -25,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable}`}
       >
         {children}
       </body>
