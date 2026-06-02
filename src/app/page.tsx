@@ -1,30 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import Image from "next/image";
+import { C, F } from "./theme";
 
 // ------------------------------------------------------------------
-// Design tokens
+// Web app destinations — the landing page links into the Dryvway app,
+// which lives on its own subdomain. Override via NEXT_PUBLIC_APP_URL.
+// `/dashboard/*` deep-links are safe: signed-out visitors are bounced to
+// the app's sign-in and routed back after auth.
 // ------------------------------------------------------------------
-const C = {
-  slate: "#2C2C2A",
-  slateSoft: "#3a3a37",
-  amber: "#E8A040",
-  amberDeep: "#c98223",
-  amberSoft: "rgba(232,160,64,0.12)",
-  warm: "#F5F0EB",
-  warmDeep: "#ebe4db",
-  warmSoftest: "#fbf8f4",
-  stone: "#888780",
-  stoneSoft: "#b8b6ad",
-  stoneLine: "rgba(44,44,42,0.10)",
-  stoneLineSoft: "rgba(44,44,42,0.06)",
-  paper: "#ffffff",
-} as const;
-
-const F = {
-  display: "var(--font-display-stack)",
-  body: "var(--font-body-stack)",
-  mono: "var(--font-mono-stack)",
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.dryvwayinc.com";
+const APP = {
+  signIn: `${APP_URL}/`,
+  signUp: `${APP_URL}/?mode=signup`,
+  find: `${APP_URL}/dashboard/find`,
+  list: `${APP_URL}/dashboard/list`,
 } as const;
 
 // ------------------------------------------------------------------
@@ -196,33 +187,18 @@ function Icon({
 }
 
 // ------------------------------------------------------------------
-// Wordmark — Dryv·way with amber dot
+// Brandmark — Dryvway logo mark
 // ------------------------------------------------------------------
-function Wordmark({
-  size = 22,
-  color = C.slate,
-  accent = C.amber,
-}: {
-  size?: number;
-  color?: string;
-  accent?: string;
-}) {
+function Brandmark({ size = 30 }: { size?: number }) {
   return (
-    <span
-      style={{
-        fontFamily: F.display,
-        fontWeight: 700,
-        fontSize: size,
-        letterSpacing: -0.6,
-        color,
-        display: "inline-flex",
-        alignItems: "baseline",
-      }}
-    >
-      <span>Dryv</span>
-      <span style={{ color: accent }}>·</span>
-      <span>way</span>
-    </span>
+    <Image
+      src="/logo.png"
+      alt="Dryvway"
+      width={size}
+      height={size}
+      priority
+      style={{ display: "block", borderRadius: 7 }}
+    />
   );
 }
 
@@ -341,6 +317,7 @@ type PhotoTone = "warm" | "porch" | "dusk" | "morning" | "block" | "night";
 function Photo({
   tone = "warm",
   label,
+  src,
   height = "100%",
   radius = 20,
   style,
@@ -348,6 +325,7 @@ function Photo({
 }: {
   tone?: PhotoTone;
   label?: string;
+  src?: string;
   height?: number | string;
   radius?: number;
   style?: CSSProperties;
@@ -376,13 +354,24 @@ function Photo({
         ...style,
       }}
     >
+      {src && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `url(${src})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+      )}
       <svg
         style={{
           position: "absolute",
           inset: 0,
           width: "100%",
           height: "100%",
-          opacity: 0.18,
+          opacity: src ? 0.12 : 0.18,
           mixBlendMode: "overlay",
           pointerEvents: "none",
         }}
@@ -401,25 +390,27 @@ function Photo({
             "radial-gradient(120% 80% at 50% 30%, transparent 40%, rgba(0,0,0,0.18) 100%)",
         }}
       />
-      <svg
-        viewBox="0 0 400 260"
-        preserveAspectRatio="xMidYMax slice"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.18 }}
-      >
-        <path
-          d="M0 220 L80 180 L120 150 L180 175 L240 140 L300 165 L360 145 L400 170 L400 260 L0 260 Z"
-          fill="#2C2C2A"
-        />
-        <path d="M40 200 L70 175 L100 200 L100 235 L40 235 Z" fill="#2C2C2A" />
-        <path d="M250 195 L290 165 L330 195 L330 240 L250 240 Z" fill="#2C2C2A" />
-      </svg>
+      {!src && (
+        <svg
+          viewBox="0 0 400 260"
+          preserveAspectRatio="xMidYMax slice"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.18 }}
+        >
+          <path
+            d="M0 220 L80 180 L120 150 L180 175 L240 140 L300 165 L360 145 L400 170 L400 260 L0 260 Z"
+            fill="#2C2C2A"
+          />
+          <path d="M40 200 L70 175 L100 200 L100 235 L40 235 Z" fill="#2C2C2A" />
+          <path d="M250 195 L290 165 L330 195 L330 240 L250 240 Z" fill="#2C2C2A" />
+        </svg>
+      )}
       {label && (
         <div
           style={{
             position: "absolute",
             left: 14,
             bottom: 12,
-            fontFamily: F.mono,
+            fontFamily: F.display, fontWeight: 500,
             fontSize: 10,
             letterSpacing: 0.6,
             color: "rgba(255,255,255,0.78)",
@@ -535,7 +526,7 @@ function SectionLabel({ num, text }: { num: string; text: string }) {
         display: "flex",
         alignItems: "center",
         gap: 14,
-        fontFamily: F.mono,
+        fontFamily: F.display, fontWeight: 500,
         fontSize: 11,
         color: C.stone,
         letterSpacing: 1.6,
@@ -596,7 +587,7 @@ function Nav() {
         }}
       >
         <a href="#top" style={{ textDecoration: "none", display: "inline-flex" }}>
-          <Wordmark size={22} />
+          <Brandmark size={30} />
         </a>
         <div style={{ flex: 1 }} />
         <NavLink href="#featured">Find a spot</NavLink>
@@ -604,20 +595,15 @@ function Nav() {
         <NavLink href="#how">How it works</NavLink>
         <NavLink href="#trust">Help</NavLink>
         <div style={{ width: 1, height: 18, background: C.stoneLine }} />
-        <button style={btnGhost()} onClick={() => scrollToId("calculator")}>
+        <a href={APP.signIn} style={{ ...btnGhost(), textDecoration: "none" }}>
           Sign in
-        </button>
-        <button style={btnPrimary()} onClick={() => scrollToId("calculator")}>
+        </a>
+        <a href={APP.signUp} style={{ ...btnPrimary(), textDecoration: "none" }}>
           Get started
-        </button>
+        </a>
       </div>
     </nav>
   );
-}
-
-function scrollToId(id: string) {
-  const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
@@ -736,7 +722,7 @@ function Hero() {
           <Rise delay={260}>
             <p
               style={{
-                fontFamily: F.body,
+                fontFamily: F.display,
                 fontSize: 20,
                 lineHeight: 1.5,
                 color: C.slate,
@@ -765,6 +751,7 @@ function Hero() {
             >
               <Photo
                 tone="porch"
+                src="/photos/hero-driveway.jpg"
                 label="46 Almond St · Mission · 4:42 PM"
                 height="100%"
                 radius={28}
@@ -956,6 +943,8 @@ function SideCard({
   title,
   body,
   cta,
+  href,
+  src,
   delay = 0,
   amber,
 }: {
@@ -965,6 +954,8 @@ function SideCard({
   title: string;
   body: string;
   cta: string;
+  href: string;
+  src?: string;
   delay?: number;
   amber?: boolean;
 }) {
@@ -990,7 +981,7 @@ function SideCard({
         }}
       >
         <div style={{ height: 280, position: "relative" }}>
-          <Photo tone={tone} radius={0} height="100%" />
+          <Photo tone={tone} src={src} radius={0} height="100%" />
           <div
             style={{
               position: "absolute",
@@ -1041,7 +1032,7 @@ function SideCard({
           </h3>
           <p
             style={{
-              fontFamily: F.body,
+              fontFamily: F.display,
               fontSize: 17,
               lineHeight: 1.55,
               color: C.slate,
@@ -1053,10 +1044,16 @@ function SideCard({
           >
             {body}
           </p>
-          <button style={amber ? btnPrimary() : btnGhostBordered()}>
+          <a
+            href={href}
+            style={{
+              ...(amber ? btnPrimary() : btnGhostBordered()),
+              textDecoration: "none",
+            }}
+          >
             {cta}{" "}
             <Icon name="arrow-r" size={14} color={amber ? C.warm : C.slate} stroke={2} />
-          </button>
+          </a>
         </div>
       </div>
     </Rise>
@@ -1094,6 +1091,8 @@ function TwoSided() {
           title="Find a spot near the stadium, the airport, the office."
           body="Skip the circling. Reserve in thirty seconds. Pull in, walk five minutes, arrive."
           cta="Find a spot"
+          href={APP.find}
+          src="/photos/driver.jpg"
           delay={80}
         />
         <SideCard
@@ -1103,6 +1102,8 @@ function TwoSided() {
           title="List your driveway. Earn while it sits empty."
           body="Five minutes to list. You set the hours. Paid every Friday, directly to your bank."
           cta="List your driveway"
+          href={APP.list}
+          src="/photos/host-driveway.jpg"
           delay={180}
           amber
         />
@@ -1117,6 +1118,7 @@ function TwoSided() {
 type Listing = {
   host: string;
   tone: PhotoTone;
+  src: string;
   neighborhood: string;
   city: string;
   price: number;
@@ -1131,6 +1133,7 @@ const LISTINGS: Listing[] = [
   {
     host: "Maria",
     tone: "porch",
+    src: "/photos/listing-maria.jpg",
     neighborhood: "Mission District",
     city: "San Francisco",
     price: 8,
@@ -1143,6 +1146,7 @@ const LISTINGS: Listing[] = [
   {
     host: "Jamal",
     tone: "dusk",
+    src: "/photos/listing-jamal.jpg",
     neighborhood: "Inner Sunset",
     city: "San Francisco",
     price: 6,
@@ -1155,6 +1159,7 @@ const LISTINGS: Listing[] = [
   {
     host: "Lena",
     tone: "morning",
+    src: "/photos/listing-lena.jpg",
     neighborhood: "Rockridge",
     city: "Oakland",
     price: 5,
@@ -1167,6 +1172,7 @@ const LISTINGS: Listing[] = [
   {
     host: "Theo",
     tone: "block",
+    src: "/photos/listing-theo.jpg",
     neighborhood: "Santa Clara",
     city: "Santa Clara",
     price: 14,
@@ -1179,6 +1185,7 @@ const LISTINGS: Listing[] = [
   {
     host: "Priya",
     tone: "warm",
+    src: "/photos/listing-priya.jpg",
     neighborhood: "Hayes Valley",
     city: "San Francisco",
     price: 9,
@@ -1191,6 +1198,7 @@ const LISTINGS: Listing[] = [
   {
     host: "Daniel",
     tone: "porch",
+    src: "/photos/listing-daniel.jpg",
     neighborhood: "North Beach",
     city: "San Francisco",
     price: 7,
@@ -1239,7 +1247,7 @@ function ListingCard(props: Listing) {
       style={{ flex: "0 0 340px", scrollSnapAlign: "start", cursor: "pointer" }}
     >
       <div style={{ position: "relative" }}>
-        <Photo tone={tone} height={300} radius={22} label={`${host} · ${neighborhood}`} />
+        <Photo tone={tone} src={props.src} height={300} radius={22} label={`${host} · ${neighborhood}`} />
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -1321,7 +1329,7 @@ function ListingCard(props: Listing) {
             <Icon name="star" size={12} color={C.amber} /> {rating}
           </div>
         </div>
-        <div style={{ fontFamily: F.body, fontSize: 14, color: C.stone, marginTop: 4 }}>
+        <div style={{ fontFamily: F.display, fontSize: 14, color: C.stone, marginTop: 4 }}>
           {miles} mi from {landmark} · {city}
         </div>
         <div style={{ marginTop: 10, fontFamily: F.display, fontSize: 15, color: C.slate }}>
@@ -1374,6 +1382,23 @@ function FeaturedRail() {
             </div>
           </Rise>
         </div>
+        <Rise delay={200}>
+          <p
+            style={{
+              fontFamily: F.display,
+              fontSize: 15,
+              lineHeight: 1.5,
+              color: C.stone,
+              marginTop: 20,
+              maxWidth: 580,
+            }}
+          >
+            <span style={{ fontWeight: 600, color: C.slate }}>Example listings.</span>{" "}
+            These are illustrations of the driveways, prices, and walk times you’ll
+            find — not live inventory. Search your destination to see what’s actually
+            available near you.
+          </p>
+        </Rise>
       </div>
 
       <div
@@ -1515,7 +1540,7 @@ function Step({ n, icon, title, body }: { n: number; icon: IconName; title: stri
       </div>
       <div
         style={{
-          fontFamily: F.mono,
+          fontFamily: F.display, fontWeight: 500,
           fontSize: 11,
           color: C.stone,
           letterSpacing: 1.5,
@@ -1541,7 +1566,7 @@ function Step({ n, icon, title, body }: { n: number; icon: IconName; title: stri
       </h3>
       <p
         style={{
-          fontFamily: F.body,
+          fontFamily: F.display,
           fontSize: 16,
           lineHeight: 1.55,
           color: C.slate,
@@ -1697,7 +1722,7 @@ function Trust() {
               </h4>
               <p
                 style={{
-                  fontFamily: F.body,
+                  fontFamily: F.display,
                   fontSize: 14,
                   lineHeight: 1.55,
                   color: C.slate,
@@ -1730,7 +1755,7 @@ function Trust() {
               </div>
               <blockquote
                 style={{
-                  fontFamily: F.body,
+                  fontFamily: F.display,
                   fontSize: 19,
                   lineHeight: 1.5,
                   color: C.slate,
@@ -1853,7 +1878,7 @@ function Calculator() {
         <div style={{ position: "relative", zIndex: 1 }}>
           <div
             style={{
-              fontFamily: F.mono,
+              fontFamily: F.display, fontWeight: 500,
               fontSize: 11,
               letterSpacing: 1.5,
               color: C.stoneSoft,
@@ -1890,7 +1915,7 @@ function Calculator() {
           <div
             style={{
               marginTop: 36,
-              fontFamily: F.mono,
+              fontFamily: F.display, fontWeight: 500,
               fontSize: 11,
               letterSpacing: 1.5,
               color: C.stoneSoft,
@@ -1937,7 +1962,7 @@ function Calculator() {
             <Icon name="sun" size={20} color={C.amber} />
             <div
               style={{
-                fontFamily: F.body,
+                fontFamily: F.display,
                 fontSize: 14,
                 lineHeight: 1.5,
                 color: C.warm,
@@ -1961,7 +1986,7 @@ function Calculator() {
           <div>
             <div
               style={{
-                fontFamily: F.mono,
+                fontFamily: F.display, fontWeight: 500,
                 fontSize: 11,
                 letterSpacing: 1.5,
                 color: C.stoneSoft,
@@ -1985,7 +2010,7 @@ function Calculator() {
             </div>
             <div
               style={{
-                fontFamily: F.body,
+                fontFamily: F.display,
                 fontSize: 18,
                 color: C.warm,
                 opacity: 0.7,
@@ -1999,7 +2024,7 @@ function Calculator() {
           <div style={{ marginTop: 40 }}>
             <div
               style={{
-                fontFamily: F.mono,
+                fontFamily: F.display, fontWeight: 500,
                 fontSize: 11,
                 letterSpacing: 1.5,
                 color: C.stoneSoft,
@@ -2035,7 +2060,7 @@ function Calculator() {
                   </div>
                   <div
                     style={{
-                      fontFamily: F.mono,
+                      fontFamily: F.display, fontWeight: 500,
                       fontSize: 10,
                       color: C.stoneSoft,
                       marginTop: 6,
@@ -2049,7 +2074,8 @@ function Calculator() {
             </div>
           </div>
 
-          <button
+          <a
+            href={APP.list}
             style={{
               marginTop: 36,
               alignSelf: "flex-start",
@@ -2065,11 +2091,12 @@ function Calculator() {
               alignItems: "center",
               gap: 8,
               cursor: "pointer",
+              textDecoration: "none",
               boxShadow: "0 12px 30px -8px rgba(232,160,64,0.45)",
             }}
           >
             Start your listing <Icon name="arrow-r" size={14} color={C.slate} stroke={2.2} />
-          </button>
+          </a>
         </div>
       </div>
     </section>
@@ -2090,8 +2117,11 @@ function Story() {
 
       <Rise delay={80} y={24}>
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+          {/* Levi's Stadium, Santa Clara. Photo: Dvortygirl / Wikimedia Commons,
+              CC BY 4.0. See public/photos/CREDITS.md for full attribution. */}
           <Photo
             tone="dusk"
+            src="/photos/story.jpg"
             label="Tasman Drive, Santa Clara · 5:08 PM, a Sunday in November"
             height={460}
             radius={28}
@@ -2103,7 +2133,7 @@ function Story() {
         <Rise delay={80}>
           <p
             style={{
-              fontFamily: F.body,
+              fontFamily: F.display,
               fontSize: 22,
               lineHeight: 1.55,
               color: C.slate,
@@ -2120,7 +2150,7 @@ function Story() {
         <Rise delay={180}>
           <p
             style={{
-              fontFamily: F.body,
+              fontFamily: F.display,
               fontSize: 22,
               lineHeight: 1.55,
               color: C.slate,
@@ -2135,7 +2165,7 @@ function Story() {
         <Rise delay={280}>
           <p
             style={{
-              fontFamily: F.display,
+              fontFamily: F.body,
               fontSize: 16,
               color: C.slate,
               opacity: 0.7,
@@ -2180,7 +2210,7 @@ function FinalCTA() {
         <Rise>
           <div
             style={{
-              fontFamily: F.mono,
+              fontFamily: F.display, fontWeight: 500,
               fontSize: 11,
               letterSpacing: 1.5,
               color: C.stoneSoft,
@@ -2218,7 +2248,8 @@ function FinalCTA() {
         </Rise>
         <Rise delay={220}>
           <div style={{ display: "flex", gap: 14, marginTop: 56, flexWrap: "wrap" }}>
-            <button
+            <a
+              href={APP.find}
               style={{
                 background: C.amber,
                 color: C.slate,
@@ -2232,12 +2263,14 @@ function FinalCTA() {
                 alignItems: "center",
                 gap: 10,
                 cursor: "pointer",
+                textDecoration: "none",
                 boxShadow: "0 14px 40px -12px rgba(232,160,64,0.5)",
               }}
             >
               Find a spot <Icon name="arrow-r" size={16} color={C.slate} stroke={2.2} />
-            </button>
-            <button
+            </a>
+            <a
+              href={APP.list}
               style={{
                 background: "transparent",
                 color: C.warm,
@@ -2251,10 +2284,11 @@ function FinalCTA() {
                 alignItems: "center",
                 gap: 10,
                 cursor: "pointer",
+                textDecoration: "none",
               }}
             >
               List your driveway <Icon name="arrow-r" size={16} color={C.warm} stroke={2.2} />
-            </button>
+            </a>
           </div>
         </Rise>
       </div>
@@ -2262,7 +2296,13 @@ function FinalCTA() {
   );
 }
 
-function FootCol({ title, links }: { title: string; links: string[] }) {
+function FootCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
     <div>
       <div
@@ -2288,18 +2328,18 @@ function FootCol({ title, links }: { title: string; links: string[] }) {
         }}
       >
         {links.map((l) => (
-          <li key={l}>
+          <li key={l.label}>
             <a
-              href="#"
+              href={l.href}
               style={{
-                fontFamily: F.body,
+                fontFamily: F.display,
                 fontSize: 14,
                 color: C.warm,
                 opacity: 0.65,
                 textDecoration: "none",
               }}
             >
-              {l}
+              {l.label}
             </a>
           </li>
         ))}
@@ -2322,10 +2362,10 @@ function Footer() {
           }}
         >
           <div>
-            <Wordmark color={C.warm} accent={C.amber} size={22} />
+            <Brandmark size={32} />
             <p
               style={{
-                fontFamily: F.body,
+                fontFamily: F.display,
                 fontSize: 14,
                 lineHeight: 1.55,
                 color: C.warm,
@@ -2339,22 +2379,32 @@ function Footer() {
           </div>
           <FootCol
             title="Product"
-            links={["Find a spot", "List your driveway", "How it works", "Trust & safety"]}
+            links={[
+              { label: "Find a spot", href: APP.find },
+              { label: "List your driveway", href: APP.list },
+              { label: "How it works", href: "#how" },
+              { label: "Trust & safety", href: "#trust" },
+            ]}
           />
           <FootCol
             title="Cities"
             links={[
-              "San Francisco",
-              "Oakland",
-              "Santa Clara",
-              "Palo Alto",
-              "San Mateo",
-              "Berkeley",
+              { label: "San Francisco", href: "#featured" },
+              { label: "Oakland", href: "#featured" },
+              { label: "Santa Clara", href: "#featured" },
+              { label: "Palo Alto", href: "#featured" },
+              { label: "San Mateo", href: "#featured" },
+              { label: "Berkeley", href: "#featured" },
             ]}
           />
           <FootCol
             title="Company"
-            links={["Our story", "Careers", "Press", "Help center"]}
+            links={[
+              { label: "Our story", href: "#story" },
+              { label: "Careers", href: "#" },
+              { label: "Press", href: "#" },
+              { label: "Help center", href: "#trust" },
+            ]}
           />
         </div>
         <div
@@ -2373,7 +2423,16 @@ function Footer() {
           }}
         >
           <span>© 2026 Dryvway, Inc.</span>
-          <span>Privacy · Terms · Insurance</span>
+          <span>
+            <a href="/privacy" style={{ color: "inherit", textDecoration: "none" }}>
+              Privacy
+            </a>
+            {" · "}
+            <a href="/terms" style={{ color: "inherit", textDecoration: "none" }}>
+              Terms
+            </a>
+            {" · Insurance"}
+          </span>
         </div>
       </div>
     </footer>

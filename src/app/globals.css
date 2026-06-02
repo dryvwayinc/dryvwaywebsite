@@ -2,7 +2,6 @@
   color-scheme: light;
   --font-display-stack: var(--font-display), -apple-system, "Helvetica Neue", system-ui, sans-serif;
   --font-body-stack: var(--font-body), "Tiempos Text", Georgia, serif;
-  --font-mono-stack: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 * { box-sizing: border-box; }
