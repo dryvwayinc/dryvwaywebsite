@@ -219,6 +219,46 @@ function useScrollY() {
   return y;
 }
 
+// Viewport breakpoints — mirrors the audit targets: 375 / 430 (phone),
+// 768 (tablet), 1024+ (desktop). SSR renders the desktop branch, then the
+// effect corrects on mount; first client render also returns "desktop", so
+// there is no hydration mismatch. Mobile styling is layered on top of the
+// existing desktop inline styles via `bp === "phone"` / `bp !== "desktop"`
+// checks — the desktop values themselves are never altered.
+type Breakpoint = "phone" | "tablet" | "desktop";
+function useBreakpoint(): Breakpoint {
+  const [bp, setBp] = useState<Breakpoint>("desktop");
+  useEffect(() => {
+    const phone = window.matchMedia("(max-width: 767px)");
+    const tablet = window.matchMedia("(min-width: 768px) and (max-width: 1023px)");
+    const update = () =>
+      setBp(phone.matches ? "phone" : tablet.matches ? "tablet" : "desktop");
+    update();
+    phone.addEventListener("change", update);
+    tablet.addEventListener("change", update);
+    return () => {
+      phone.removeEventListener("change", update);
+      tablet.removeEventListener("change", update);
+    };
+  }, []);
+  return bp;
+}
+
+// Nav collapses to a hamburger until the full row fits (~1024px). Kept
+// separate from useBreakpoint so the threshold can differ from the layout
+// breakpoints without affecting desktop (>=1024 stays the full inline nav).
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const update = () => setMatches(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [query]);
+  return matches;
+}
+
 function useReveal(opts: { threshold?: number; rootMargin?: string } = {}) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [shown, setShown] = useState(false);
@@ -322,6 +362,9 @@ function Photo({
   radius = 20,
   style,
   children,
+  priority = false,
+  sizes = "(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 640px",
+  alt,
 }: {
   tone?: PhotoTone;
   label?: string;
@@ -330,6 +373,9 @@ function Photo({
   radius?: number;
   style?: CSSProperties;
   children?: ReactNode;
+  priority?: boolean;
+  sizes?: string;
+  alt?: string;
 }) {
   const tones: Record<PhotoTone, string> = {
     warm: "linear-gradient(160deg,#f3d9b8 0%, #e6b078 32%, #c97a4e 62%, #5e3a31 100%)",
@@ -355,14 +401,13 @@ function Photo({
       }}
     >
       {src && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${src})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
+        <Image
+          src={src}
+          alt={alt ?? label ?? ""}
+          fill
+          sizes={sizes}
+          priority={priority}
+          style={{ objectFit: "cover" }}
         />
       )}
       <svg
@@ -544,7 +589,7 @@ function h2Style(): CSSProperties {
   return {
     fontFamily: F.display,
     fontWeight: 600,
-    fontSize: "clamp(40px, 4.6vw, 64px)",
+    fontSize: "clamp(30px, 4.6vw, 64px)",
     lineHeight: 1.04,
     letterSpacing: -1.6,
     color: C.slate,
@@ -556,9 +601,39 @@ function h2Style(): CSSProperties {
 // ------------------------------------------------------------------
 // Nav
 // ------------------------------------------------------------------
+const NAV_LINKS = [
+  { href: "#featured", label: "Find a spot" },
+  { href: "#calculator", label: "List your driveway" },
+  { href: "#how", label: "How it works" },
+  { href: "#trust", label: "Help" },
+];
+
 function Nav() {
   const y = useScrollY();
   const solid = y > 40;
+  // Collapse to a hamburger until the full link row comfortably fits (~1024px).
+  // Desktop (>=1024px) keeps the original inline nav untouched.
+  const compact = useMediaQuery("(max-width: 1023px)");
+  const [open, setOpen] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null);
+  // Resizing from phone back up to desktop should always clear the panel.
+  useEffect(() => {
+    if (!compact && open) setOpen(false);
+  }, [compact, open]);
+  // Escape closes the menu and returns focus to the toggle (keyboard a11y).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        menuBtnRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+  const opaque = solid || open;
+
   return (
     <nav
       style={{
@@ -569,39 +644,158 @@ function Nav() {
         zIndex: 50,
         transition:
           "background 300ms ease, border-color 300ms ease, backdrop-filter 300ms ease, padding 300ms ease",
-        background: solid ? "rgba(245,240,235,0.82)" : "rgba(245,240,235,0)",
-        backdropFilter: solid ? "saturate(140%) blur(14px)" : "none",
-        WebkitBackdropFilter: solid ? "saturate(140%) blur(14px)" : "none",
-        borderBottom: `1px solid ${solid ? C.stoneLine : "transparent"}`,
+        background: opaque ? "rgba(245,240,235,0.82)" : "rgba(245,240,235,0)",
+        backdropFilter: opaque ? "saturate(140%) blur(14px)" : "none",
+        WebkitBackdropFilter: opaque ? "saturate(140%) blur(14px)" : "none",
+        borderBottom: `1px solid ${opaque ? C.stoneLine : "transparent"}`,
       }}
     >
       <div
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: solid ? "14px 32px" : "22px 32px",
+          padding: compact
+            ? solid
+              ? "12px 20px"
+              : "16px 20px"
+            : solid
+              ? "14px 32px"
+              : "22px 32px",
           display: "flex",
           alignItems: "center",
           gap: 24,
           transition: "padding 300ms ease",
         }}
       >
-        <a href="#top" style={{ textDecoration: "none", display: "inline-flex" }}>
+        <a
+          href="#top"
+          style={{ textDecoration: "none", display: "inline-flex" }}
+          onClick={() => setOpen(false)}
+        >
           <Brandmark size={30} />
         </a>
         <div style={{ flex: 1 }} />
-        <NavLink href="#featured">Find a spot</NavLink>
-        <NavLink href="#calculator">List your driveway</NavLink>
-        <NavLink href="#how">How it works</NavLink>
-        <NavLink href="#trust">Help</NavLink>
-        <div style={{ width: 1, height: 18, background: C.stoneLine }} />
-        <a href={APP.signIn} style={{ ...btnGhost(), textDecoration: "none" }}>
-          Sign in
-        </a>
-        <a href={APP.signUp} style={{ ...btnPrimary(), textDecoration: "none" }}>
-          Get started
-        </a>
+        {compact ? (
+          <button
+            ref={menuBtnRef}
+            type="button"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-nav-panel"
+            onClick={() => setOpen((v) => !v)}
+            style={{
+              width: 44,
+              height: 44,
+              display: "grid",
+              placeItems: "center",
+              background: "transparent",
+              border: 0,
+              cursor: "pointer",
+              color: C.slate,
+              marginRight: -8,
+            }}
+          >
+            <svg
+              width={24}
+              height={24}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              {open ? (
+                <>
+                  <path d="M6 6l12 12" />
+                  <path d="M18 6L6 18" />
+                </>
+              ) : (
+                <>
+                  <path d="M4 7h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 17h16" />
+                </>
+              )}
+            </svg>
+          </button>
+        ) : (
+          <>
+            <NavLink href="#featured">Find a spot</NavLink>
+            <NavLink href="#calculator">List your driveway</NavLink>
+            <NavLink href="#how">How it works</NavLink>
+            <NavLink href="#trust">Help</NavLink>
+            <div style={{ width: 1, height: 18, background: C.stoneLine }} />
+            <a href={APP.signIn} style={{ ...btnGhost(), textDecoration: "none" }}>
+              Sign in
+            </a>
+            <a href={APP.signUp} style={{ ...btnPrimary(), textDecoration: "none" }}>
+              Get started
+            </a>
+          </>
+        )}
       </div>
+
+      {compact && open && (
+        <div
+          id="mobile-nav-panel"
+          style={{
+            borderTop: `1px solid ${C.stoneLine}`,
+            background: "rgba(245,240,235,0.97)",
+            backdropFilter: "saturate(140%) blur(14px)",
+            WebkitBackdropFilter: "saturate(140%) blur(14px)",
+            padding: "8px 20px 20px",
+          }}
+        >
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              onClick={() => setOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                minHeight: 52,
+                fontFamily: F.display,
+                fontWeight: 500,
+                fontSize: 17,
+                color: C.slate,
+                textDecoration: "none",
+                borderBottom: `1px solid ${C.stoneLineSoft}`,
+              }}
+            >
+              {l.label}
+            </a>
+          ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+            <a
+              href={APP.signIn}
+              onClick={() => setOpen(false)}
+              style={{
+                ...btnGhostBordered(),
+                justifyContent: "center",
+                textDecoration: "none",
+                padding: "14px 22px",
+              }}
+            >
+              Sign in
+            </a>
+            <a
+              href={APP.signUp}
+              onClick={() => setOpen(false)}
+              style={{
+                ...btnPrimary(),
+                justifyContent: "center",
+                textDecoration: "none",
+                padding: "14px 22px",
+                fontSize: 15,
+              }}
+            >
+              Get started
+            </a>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
@@ -648,13 +842,18 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
 function Hero() {
   const y = useScrollY();
   const parallax = Math.min(80, y * 0.18);
+  const bp = useBreakpoint();
+  const isPhone = bp === "phone";
+  // The nav already collapses to a hamburger below 1024px, so the hero stacks
+  // for phone AND tablet to stay consistent. Desktop (>=1024px) is unchanged.
+  const stacked = bp !== "desktop";
 
   return (
     <section
       id="top"
-      style={{ position: "relative", paddingTop: 120, paddingBottom: 80, scrollMarginTop: 80 }}
+      style={{ position: "relative", paddingTop: isPhone ? 96 : 120, paddingBottom: 80, scrollMarginTop: 80 }}
     >
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: isPhone ? "0 20px" : "0 32px" }}>
         <Rise delay={50}>
           <div
             style={{
@@ -690,10 +889,10 @@ function Hero() {
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "24px 32px 0",
+          padding: isPhone ? "20px 20px 0" : "24px 32px 0",
           display: "grid",
-          gridTemplateColumns: "1.15fr 1fr",
-          gap: 64,
+          gridTemplateColumns: stacked ? "1fr" : "1.15fr 1fr",
+          gap: stacked ? 36 : 64,
           alignItems: "center",
         }}
       >
@@ -703,9 +902,9 @@ function Hero() {
               style={{
                 fontFamily: F.display,
                 fontWeight: 600,
-                fontSize: "clamp(56px, 7.4vw, 104px)",
+                fontSize: "clamp(38px, 7.4vw, 104px)",
                 lineHeight: 0.96,
-                letterSpacing: -2.2,
+                letterSpacing: isPhone ? -1.2 : -2.2,
                 color: C.slate,
                 margin: 0,
               }}
@@ -739,7 +938,7 @@ function Hero() {
 
         </div>
 
-        <div style={{ position: "relative", height: 620 }}>
+        <div style={{ position: "relative", height: stacked ? (isPhone ? 360 : 460) : 620 }}>
           <Rise delay={200} y={36} style={{ position: "absolute", inset: 0 }}>
             <div
               style={{
@@ -753,8 +952,11 @@ function Hero() {
                 tone="porch"
                 src="/photos/hero-driveway.jpg"
                 label="46 Almond St · Mission · 4:42 PM"
+                alt="A welcoming residential driveway at golden hour, available to book on Dryvway"
                 height="100%"
                 radius={28}
+                priority
+                sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 560px"
               />
             </div>
           </Rise>
@@ -762,7 +964,7 @@ function Hero() {
           <Rise
             delay={520}
             y={18}
-            style={{ position: "absolute", left: -32, bottom: 56, zIndex: 2 }}
+            style={{ position: "absolute", left: stacked ? 12 : -32, bottom: stacked ? 16 : 56, zIndex: 2 }}
           >
             <div
               style={{
@@ -822,7 +1024,7 @@ function Hero() {
           <Rise
             delay={620}
             y={18}
-            style={{ position: "absolute", right: -24, top: 60, zIndex: 2 }}
+            style={{ position: "absolute", right: stacked ? 12 : -24, top: stacked ? 16 : 60, zIndex: 2 }}
           >
             <div
               style={{
@@ -871,7 +1073,7 @@ function Hero() {
         </div>
       </div>
 
-      <div style={{ marginTop: 100, overflow: "hidden", position: "relative" }}>
+      <div style={{ marginTop: isPhone ? 64 : 100, overflow: "hidden", position: "relative" }}>
         <div
           style={{
             position: "absolute",
@@ -1061,10 +1263,11 @@ function SideCard({
 }
 
 function TwoSided() {
+  const isPhone = useBreakpoint() === "phone";
   return (
     <section
       id="marketplace"
-      style={{ padding: "120px 32px 80px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+      style={{ padding: isPhone ? "72px 20px 56px" : "120px 32px 80px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
     >
       <Rise>
         <SectionLabel num="01" text="The marketplace" />
@@ -1079,9 +1282,9 @@ function TwoSided() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 28,
-          marginTop: 64,
+          gridTemplateColumns: isPhone ? "1fr" : "1fr 1fr",
+          gap: isPhone ? 20 : 28,
+          marginTop: isPhone ? 40 : 64,
         }}
       >
         <SideCard
@@ -1240,15 +1443,18 @@ function ListingCard(props: Listing) {
     props;
   const [h, setH] = useState(false);
   const [fav, setFav] = useState(false);
+  const isPhone = useBreakpoint() === "phone";
   return (
     <div
       onMouseEnter={() => setH(true)}
       onMouseLeave={() => setH(false)}
-      style={{ flex: "0 0 340px", scrollSnapAlign: "start", cursor: "pointer" }}
+      style={{ flex: isPhone ? "0 0 300px" : "0 0 340px", scrollSnapAlign: "start", cursor: "pointer" }}
     >
       <div style={{ position: "relative" }}>
-        <Photo tone={tone} src={props.src} height={300} radius={22} label={`${host} · ${neighborhood}`} />
+        <Photo tone={tone} src={props.src} height={isPhone ? 260 : 300} radius={22} label={`${host} · ${neighborhood}`} sizes="(max-width: 767px) 300px, 340px" />
         <button
+          aria-label={fav ? "Remove from saved" : "Save listing"}
+          aria-pressed={fav}
           onClick={(e) => {
             e.stopPropagation();
             setFav(!fav);
@@ -1257,8 +1463,8 @@ function ListingCard(props: Listing) {
             position: "absolute",
             top: 14,
             right: 14,
-            width: 34,
-            height: 34,
+            width: isPhone ? 44 : 34,
+            height: isPhone ? 44 : 34,
             borderRadius: "50%",
             background: "rgba(245,240,235,0.9)",
             border: 0,
@@ -1346,12 +1552,13 @@ function ListingCard(props: Listing) {
 
 function FeaturedRail() {
   const railRef = useRef<HTMLDivElement | null>(null);
+  const isPhone = useBreakpoint() === "phone";
   const scrollBy = (dx: number) =>
     railRef.current && railRef.current.scrollBy({ left: dx, behavior: "smooth" });
 
   return (
-    <section id="featured" style={{ padding: "60px 0 100px", scrollMarginTop: 80 }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+    <section id="featured" style={{ padding: isPhone ? "40px 0 72px" : "60px 0 100px", scrollMarginTop: 80 }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: isPhone ? "0 20px" : "0 32px" }}>
         <Rise>
           <SectionLabel num="02" text="Featured driveways" />
         </Rise>
@@ -1361,6 +1568,7 @@ function FeaturedRail() {
             alignItems: "flex-end",
             justifyContent: "space-between",
             gap: 32,
+            flexWrap: "wrap",
           }}
         >
           <Rise delay={80}>
@@ -1409,7 +1617,7 @@ function FeaturedRail() {
           gap: 20,
           overflowX: "auto",
           overflowY: "visible",
-          padding: "36px 32px 24px",
+          padding: isPhone ? "28px 20px 20px" : "36px 32px 24px",
           scrollSnapType: "x mandatory",
           maxWidth: 1280,
           margin: "0 auto",
@@ -1472,6 +1680,7 @@ function SideToggle({
   side: "dru" | "wayne";
   setSide: (s: "dru" | "wayne") => void;
 }) {
+  const isPhone = useBreakpoint() === "phone";
   return (
     <div
       style={{
@@ -1492,7 +1701,7 @@ function SideToggle({
             background: "transparent",
             border: 0,
             cursor: "pointer",
-            padding: "10px 22px",
+            padding: isPhone ? "13px 22px" : "10px 22px",
             borderRadius: 999,
             fontFamily: F.display,
             fontWeight: 600,
@@ -1583,10 +1792,11 @@ function Step({ n, icon, title, body }: { n: number; icon: IconName; title: stri
 function HowItWorks() {
   const [side, setSide] = useState<"dru" | "wayne">("dru");
   const steps = side === "dru" ? DRU_STEPS : WAYNE_STEPS;
+  const isPhone = useBreakpoint() === "phone";
   return (
     <section
       id="how"
-      style={{ padding: "120px 32px 100px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+      style={{ padding: isPhone ? "72px 20px 64px" : "120px 32px 100px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
     >
       <Rise>
         <SectionLabel num="03" text="How it works" />
@@ -1614,9 +1824,9 @@ function HowItWorks() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
+          gridTemplateColumns: isPhone ? "1fr" : "repeat(3,1fr)",
           gap: 28,
-          marginTop: 80,
+          marginTop: isPhone ? 48 : 80,
         }}
       >
         {steps.map((s, i) => (
@@ -1673,10 +1883,14 @@ const REVIEWS = [
 ];
 
 function Trust() {
+  const bp = useBreakpoint();
+  const isPhone = bp === "phone";
+  // 4 pillars are too tight at tablet width, so go 2-up on phone AND tablet.
+  const isMobile = bp !== "desktop";
   return (
     <section
       id="trust"
-      style={{ padding: "20px 32px 100px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+      style={{ padding: isPhone ? "20px 20px 72px" : "20px 32px 100px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
     >
       <Rise>
         <SectionLabel num="04" text="Trust, in plain sight" />
@@ -1691,9 +1905,9 @@ function Trust() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4,1fr)",
+          gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",
           gap: 20,
-          marginTop: 56,
+          marginTop: isPhone ? 36 : 56,
         }}
       >
         {PILLARS.map((p, i) => (
@@ -1723,7 +1937,7 @@ function Trust() {
               <p
                 style={{
                   fontFamily: F.display,
-                  fontSize: 14,
+                  fontSize: isPhone ? 15 : 14,
                   lineHeight: 1.55,
                   color: C.slate,
                   opacity: 0.72,
@@ -1740,9 +1954,9 @@ function Trust() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
+          gridTemplateColumns: isPhone ? "1fr" : "repeat(3,1fr)",
           gap: 28,
-          marginTop: 56,
+          marginTop: isPhone ? 36 : 56,
         }}
       >
         {REVIEWS.map((r, i) => (
@@ -1833,12 +2047,15 @@ function Calculator() {
   const monthly = Math.round(city.rate * hours * 0.92);
   const yearly = monthly * 12;
   const [ref, shown] = useReveal({ threshold: 0.25 });
+  const bp = useBreakpoint();
+  const isPhone = bp === "phone";
+  const stack = bp !== "desktop";
 
   return (
     <section
       ref={ref}
       id="calculator"
-      style={{ padding: "80px 32px 120px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
+      style={{ padding: isPhone ? "56px 20px 80px" : "80px 32px 120px", maxWidth: 1280, margin: "0 auto", scrollMarginTop: 80 }}
     >
       <Rise>
         <SectionLabel num="05" text="Earnings calculator" />
@@ -1852,14 +2069,14 @@ function Calculator() {
 
       <div
         style={{
-          marginTop: 56,
+          marginTop: isPhone ? 36 : 56,
           background: C.slate,
           color: C.warm,
-          borderRadius: 32,
-          padding: 40,
+          borderRadius: isPhone ? 22 : 32,
+          padding: isPhone ? 22 : 40,
           display: "grid",
-          gridTemplateColumns: "1fr 1.1fr",
-          gap: 56,
+          gridTemplateColumns: stack ? "1fr" : "1fr 1.1fr",
+          gap: stack ? 32 : 56,
           position: "relative",
           overflow: "hidden",
         }}
@@ -1893,7 +2110,7 @@ function Calculator() {
                 key={c.key}
                 onClick={() => setCityKey(c.key)}
                 style={{
-                  padding: "10px 16px",
+                  padding: isPhone ? "13px 16px" : "10px 16px",
                   borderRadius: 999,
                   border: `1px solid ${
                     cityKey === c.key ? C.amber : "rgba(245,240,235,0.16)"
@@ -1999,7 +2216,7 @@ function Calculator() {
               style={{
                 fontFamily: F.display,
                 fontWeight: 600,
-                fontSize: "clamp(72px, 8vw, 128px)",
+                fontSize: "clamp(44px, 8vw, 128px)",
                 lineHeight: 0.95,
                 letterSpacing: -3,
                 marginTop: 16,
@@ -2107,34 +2324,35 @@ function Calculator() {
 // Origin story
 // ------------------------------------------------------------------
 function Story() {
+  const isPhone = useBreakpoint() === "phone";
   return (
-    <section id="story" style={{ padding: "80px 0 100px", scrollMarginTop: 80 }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+    <section id="story" style={{ padding: isPhone ? "56px 0 72px" : "80px 0 100px", scrollMarginTop: 80 }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: isPhone ? "0 20px" : "0 32px" }}>
         <Rise>
           <SectionLabel num="06" text="Where we started" />
         </Rise>
       </div>
 
       <Rise delay={80} y={24}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: isPhone ? "0 20px" : "0 32px" }}>
           {/* Levi's Stadium, Santa Clara. Photo: Dvortygirl / Wikimedia Commons,
               CC BY 4.0. See public/photos/CREDITS.md for full attribution. */}
           <Photo
             tone="dusk"
             src="/photos/story.jpg"
             label="Tasman Drive, Santa Clara · 5:08 PM, a Sunday in November"
-            height={460}
+            height={isPhone ? 300 : 460}
             radius={28}
           />
         </div>
       </Rise>
 
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "64px 32px 0" }}>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: isPhone ? "40px 20px 0" : "64px 32px 0" }}>
         <Rise delay={80}>
           <p
             style={{
               fontFamily: F.display,
-              fontSize: 22,
+              fontSize: isPhone ? 18 : 22,
               lineHeight: 1.55,
               color: C.slate,
               margin: 0,
@@ -2151,7 +2369,7 @@ function Story() {
           <p
             style={{
               fontFamily: F.display,
-              fontSize: 22,
+              fontSize: isPhone ? 18 : 22,
               lineHeight: 1.55,
               color: C.slate,
               margin: "28px 0 0",
@@ -2185,25 +2403,26 @@ function Story() {
 // Final CTA + Footer
 // ------------------------------------------------------------------
 function FinalCTA() {
+  const isPhone = useBreakpoint() === "phone";
   return (
     <section style={{ background: C.slate, color: C.warm, position: "relative", overflow: "hidden" }}>
       <div
         style={{
           position: "absolute",
-          right: -120,
+          right: isPhone ? -80 : -120,
           top: 40,
           opacity: 0.08,
           transform: "rotate(-12deg)",
         }}
       >
-        <Icon name="pin-fill" size={520} color={C.amber} />
+        <Icon name="pin-fill" size={isPhone ? 300 : 520} color={C.amber} />
       </div>
 
       <div
         style={{
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "160px 32px 120px",
+          padding: isPhone ? "96px 20px 80px" : "160px 32px 120px",
           position: "relative",
         }}
       >
@@ -2225,7 +2444,7 @@ function FinalCTA() {
             style={{
               fontFamily: F.display,
               fontWeight: 600,
-              fontSize: "clamp(48px, 6.4vw, 96px)",
+              fontSize: "clamp(34px, 6.4vw, 96px)",
               lineHeight: 1.0,
               letterSpacing: -2,
               color: C.warm,
@@ -2349,16 +2568,17 @@ function FootCol({
 }
 
 function Footer() {
+  const isPhone = useBreakpoint() === "phone";
   return (
     <footer style={{ background: C.slate, color: C.warm, paddingTop: 4 }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px 56px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: isPhone ? "0 20px 48px" : "0 32px 56px" }}>
         <div style={{ height: 1, background: "rgba(245,240,235,0.12)" }} />
         <div
           style={{
             paddingTop: 56,
             display: "grid",
-            gridTemplateColumns: "1.4fr 1fr 1fr 1fr",
-            gap: 40,
+            gridTemplateColumns: isPhone ? "1fr 1fr" : "1.4fr 1fr 1fr 1fr",
+            gap: isPhone ? 28 : 40,
           }}
         >
           <div>

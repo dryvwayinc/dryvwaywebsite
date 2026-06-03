@@ -88,7 +88,7 @@ export function LegalShell({
           style={{
             maxWidth: 1280,
             margin: "0 auto",
-            padding: "16px 32px",
+            padding: "16px clamp(20px, 5vw, 32px)",
             display: "flex",
             alignItems: "center",
             gap: 24,
@@ -103,7 +103,7 @@ export function LegalShell({
       </header>
 
       {/* Title + body */}
-      <main style={{ maxWidth: MEASURE, margin: "0 auto", padding: "72px 32px 96px" }}>
+      <main style={{ maxWidth: MEASURE, margin: "0 auto", padding: "clamp(48px, 9vw, 72px) clamp(20px, 5vw, 32px) 96px" }}>
         <div style={eyebrowStyle()}>
           <span style={{ width: 32, height: 1, background: C.stoneLine }} />
           {effectiveDate}
@@ -112,7 +112,7 @@ export function LegalShell({
           style={{
             fontFamily: F.display,
             fontWeight: 600,
-            fontSize: "clamp(36px, 4vw, 52px)",
+            fontSize: "clamp(30px, 4vw, 52px)",
             lineHeight: 1.06,
             letterSpacing: -1.4,
             color: C.slate,
@@ -131,7 +131,7 @@ export function LegalShell({
           style={{
             maxWidth: 1280,
             margin: "0 auto",
-            padding: "28px 32px",
+            padding: "28px clamp(20px, 5vw, 32px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",

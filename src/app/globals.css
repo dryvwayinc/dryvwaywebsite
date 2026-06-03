@@ -59,3 +59,11 @@ input[type="range"]::-moz-range-thumb {
   border: 4px solid #2C2C2A;
   cursor: pointer;
 }
+
+/* Touch devices get a larger track + thumb that's easier to grab. Scoped to
+   small viewports so the desktop slider is unchanged. */
+@media (max-width: 767px) {
+  input[type="range"] { height: 6px; }
+  input[type="range"]::-webkit-slider-thumb { width: 28px; height: 28px; }
+  input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; }
+}
