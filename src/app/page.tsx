@@ -564,6 +564,104 @@ function btnGhostBordered(): CSSProperties {
   };
 }
 
+// Interactive CTA link. Inline styles can't use :hover, so motion is driven by
+// hover/press state (same idiom as NavLink/SideCard). Resting appearance is the
+// untouched btn* base; hover adds a lift + (primary) amber glow and a one-shot
+// light sweep; press squishes for tactile feedback. All motion is gated off
+// under prefers-reduced-motion (color/glow stay — those aren't motion).
+function HoverButton({
+  href,
+  variant,
+  children,
+  onClick,
+  style,
+}: {
+  href: string;
+  variant: "primary" | "ghost" | "ghostBordered";
+  children: ReactNode;
+  onClick?: () => void;
+  style?: CSSProperties;
+}) {
+  const [hover, setHover] = useState(false);
+  const [press, setPress] = useState(false);
+  const reduce = useMediaQuery("(prefers-reduced-motion: reduce)");
+
+  const isPrimary = variant === "primary";
+  const base =
+    variant === "primary"
+      ? btnPrimary()
+      : variant === "ghostBordered"
+        ? btnGhostBordered()
+        : btnGhost();
+
+  const lift = press ? -1 : hover ? -2 : 0;
+  const scale = press ? 0.97 : 1;
+
+  return (
+    <a
+      href={href}
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => {
+        setHover(false);
+        setPress(false);
+      }}
+      onMouseDown={() => setPress(true)}
+      onMouseUp={() => setPress(false)}
+      style={{
+        ...base,
+        position: "relative",
+        overflow: "hidden", // clips the shine sweep to the pill shape
+        textDecoration: "none",
+        background: hover && !isPrimary
+          ? variant === "ghostBordered"
+            ? C.amberSoft
+            : C.warmDeep
+          : base.background,
+        boxShadow: isPrimary && hover
+          ? "0 12px 26px -10px rgba(232,160,64,0.6)"
+          : isPrimary
+            ? "0 0 0 rgba(232,160,64,0)"
+            : undefined,
+        transform: reduce ? "none" : `translateY(${lift}px) scale(${scale})`,
+        transition:
+          "transform 220ms cubic-bezier(.22,.61,.36,1), background 200ms ease, box-shadow 260ms ease",
+        ...style,
+      }}
+    >
+      {isPrimary && !reduce && (
+        <span
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: "40%",
+            background:
+              "linear-gradient(105deg, transparent, rgba(255,255,255,0.55), transparent)",
+            // Sweep across on enter; snap back instantly (no transition) on leave.
+            transform: hover ? "translateX(320%)" : "translateX(-160%)",
+            transition: hover ? "transform 720ms ease" : "none",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {/* relative wrapper keeps the label painting above the absolute shine span */}
+      <span
+        style={{
+          position: "relative",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        {children}
+      </span>
+    </a>
+  );
+}
+
 function SectionLabel({ num, text }: { num: string; text: string }) {
   return (
     <div
@@ -669,10 +767,28 @@ function Nav() {
       >
         <a
           href="#top"
-          style={{ textDecoration: "none", display: "inline-flex" }}
+          aria-label="Dryvway Inc. home"
+          style={{
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10,
+          }}
           onClick={() => setOpen(false)}
         >
-          <Brandmark size={30} />
+          <Brandmark size={42} />
+          <span
+            style={{
+              fontFamily: F.display,
+              fontWeight: 600,
+              fontSize: 22,
+              letterSpacing: "-0.02em",
+              color: C.slate,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Dryvway Inc.
+          </span>
         </a>
         <div style={{ flex: 1 }} />
         {compact ? (
@@ -726,12 +842,12 @@ function Nav() {
             <NavLink href="#how">How it works</NavLink>
             <NavLink href="#trust">Help</NavLink>
             <div style={{ width: 1, height: 18, background: C.stoneLine }} />
-            <a href={APP.signIn} style={{ ...btnGhost(), textDecoration: "none" }}>
+            <HoverButton variant="ghost" href={APP.signIn}>
               Sign in
-            </a>
-            <a href={APP.signUp} style={{ ...btnPrimary(), textDecoration: "none" }}>
+            </HoverButton>
+            <HoverButton variant="primary" href={APP.signUp}>
               Get started
-            </a>
+            </HoverButton>
           </>
         )}
       </div>
@@ -768,31 +884,22 @@ function Nav() {
             </a>
           ))}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
-            <a
+            <HoverButton
+              variant="ghostBordered"
               href={APP.signIn}
               onClick={() => setOpen(false)}
-              style={{
-                ...btnGhostBordered(),
-                justifyContent: "center",
-                textDecoration: "none",
-                padding: "14px 22px",
-              }}
+              style={{ justifyContent: "center", padding: "14px 22px" }}
             >
               Sign in
-            </a>
-            <a
+            </HoverButton>
+            <HoverButton
+              variant="primary"
               href={APP.signUp}
               onClick={() => setOpen(false)}
-              style={{
-                ...btnPrimary(),
-                justifyContent: "center",
-                textDecoration: "none",
-                padding: "14px 22px",
-                fontSize: 15,
-              }}
+              style={{ justifyContent: "center", padding: "14px 22px", fontSize: 15 }}
             >
               Get started
-            </a>
+            </HoverButton>
           </div>
         </div>
       )}
@@ -2582,7 +2689,7 @@ function Footer() {
           }}
         >
           <div>
-            <Brandmark size={32} />
+            <Brandmark size={44} />
             <p
               style={{
                 fontFamily: F.display,

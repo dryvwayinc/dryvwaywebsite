@@ -95,7 +95,7 @@ export function LegalShell({
           }}
         >
           <Link href="/" style={{ display: "inline-flex", textDecoration: "none" }}>
-            <Brandmark size={30} />
+            <Brandmark size={42} />
           </Link>
           <div style={{ flex: 1 }} />
           <HomeLink>← Back to home</HomeLink>
@@ -140,7 +140,7 @@ export function LegalShell({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <Brandmark size={28} />
+            <Brandmark size={38} />
             <span
               style={{
                 fontFamily: F.display,
