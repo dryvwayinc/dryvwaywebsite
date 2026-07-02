@@ -516,20 +516,24 @@ function Avatar({
 // ------------------------------------------------------------------
 // Styled buttons & shared helpers
 // ------------------------------------------------------------------
-function btnPrimary(): CSSProperties {
+// `size` distinguishes compact nav buttons ("sm") from the larger, standalone
+// CTA pills used in content sections ("lg") — both variants share identical
+// padding/font-size at a given size so swapping which action is primary never
+// changes the button's footprint.
+function btnPrimary(size: "sm" | "lg" = "sm"): CSSProperties {
   return {
     background: C.amber,
     color: C.slate,
     border: 0,
     borderRadius: 999,
-    padding: "10px 18px",
+    padding: size === "lg" ? "16px 26px" : "10px 18px",
     fontFamily: F.display,
     fontWeight: 600,
-    fontSize: 13,
+    fontSize: size === "lg" ? 15 : 13,
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
-    gap: 8,
+    gap: size === "lg" ? 10 : 8,
     transition: "transform 200ms ease, background 200ms ease",
   };
 }
@@ -546,20 +550,23 @@ function btnGhost(): CSSProperties {
     cursor: "pointer",
   };
 }
-function btnGhostBordered(): CSSProperties {
+// `tone` picks the border/text color for light (cream/paper) vs dark (slate)
+// backgrounds. Border is bumped to 1.5px so the secondary CTA reads as a
+// clear, clickable pill rather than a thin line of text.
+function btnGhostBordered(size: "sm" | "lg" = "sm", tone: "light" | "dark" = "light"): CSSProperties {
   return {
     background: "transparent",
-    color: C.slate,
-    border: `1px solid ${C.slate}`,
+    color: tone === "dark" ? C.warm : C.slate,
+    border: tone === "dark" ? "1.5px solid rgba(245,240,235,0.4)" : `1.5px solid ${C.slate}`,
     borderRadius: 999,
-    padding: "12px 22px",
+    padding: size === "lg" ? "16px 26px" : "12px 22px",
     fontFamily: F.display,
     fontWeight: 600,
-    fontSize: 14,
+    fontSize: size === "lg" ? 15 : 14,
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
-    gap: 8,
+    gap: size === "lg" ? 10 : 8,
     transition: "all 220ms ease",
   };
 }
@@ -575,12 +582,16 @@ function HoverButton({
   children,
   onClick,
   style,
+  size = "sm",
+  tone = "light",
 }: {
   href: string;
   variant: "primary" | "ghost" | "ghostBordered";
   children: ReactNode;
   onClick?: () => void;
   style?: CSSProperties;
+  size?: "sm" | "lg";
+  tone?: "light" | "dark";
 }) {
   const [hover, setHover] = useState(false);
   const [press, setPress] = useState(false);
@@ -589,9 +600,9 @@ function HoverButton({
   const isPrimary = variant === "primary";
   const base =
     variant === "primary"
-      ? btnPrimary()
+      ? btnPrimary(size)
       : variant === "ghostBordered"
-        ? btnGhostBordered()
+        ? btnGhostBordered(size, tone)
         : btnGhost();
 
   const lift = press ? -1 : hover ? -2 : 0;
@@ -615,7 +626,9 @@ function HoverButton({
         textDecoration: "none",
         background: hover && !isPrimary
           ? variant === "ghostBordered"
-            ? C.amberSoft
+            ? tone === "dark"
+              ? "rgba(245,240,235,0.12)"
+              : C.amberSoft
             : C.warmDeep
           : base.background,
         boxShadow: isPrimary && hover
@@ -653,7 +666,7 @@ function HoverButton({
           position: "relative",
           display: "inline-flex",
           alignItems: "center",
-          gap: 8,
+          gap: size === "lg" ? 10 : 8,
         }}
       >
         {children}
@@ -1031,11 +1044,10 @@ function Hero() {
                 fontFamily: F.display,
                 fontSize: 20,
                 lineHeight: 1.5,
-                color: C.slate,
+                color: C.slateMuted,
                 marginTop: 28,
                 marginBottom: 36,
                 maxWidth: 520,
-                opacity: 0.85,
               }}
             >
               List your space in five minutes. Earn every time someone parks. Or find a spot
@@ -1344,8 +1356,7 @@ function SideCard({
               fontFamily: F.display,
               fontSize: 17,
               lineHeight: 1.55,
-              color: C.slate,
-              opacity: 0.78,
+              color: C.slateMuted,
               marginTop: 16,
               marginBottom: 28,
               maxWidth: 460,
@@ -1353,16 +1364,13 @@ function SideCard({
           >
             {body}
           </p>
-          <a
+          <HoverButton
             href={href}
-            style={{
-              ...(amber ? btnPrimary() : btnGhostBordered()),
-              textDecoration: "none",
-            }}
+            variant={amber ? "primary" : "ghostBordered"}
+            size="lg"
           >
-            {cta}{" "}
-            <Icon name="arrow-r" size={14} color={amber ? C.warm : C.slate} stroke={2} />
-          </a>
+            {cta} <Icon name="arrow-r" size={14} color={C.slate} stroke={2} />
+          </HoverButton>
         </div>
       </div>
     </Rise>
@@ -1404,6 +1412,7 @@ function TwoSided() {
           href={APP.find}
           src="/photos/driver.jpg"
           delay={80}
+          amber
         />
         <SideCard
           tone="porch"
@@ -1415,7 +1424,6 @@ function TwoSided() {
           href={APP.list}
           src="/photos/host-driveway.jpg"
           delay={180}
-          amber
         />
       </div>
     </section>
@@ -1885,8 +1893,7 @@ function Step({ n, icon, title, body }: { n: number; icon: IconName; title: stri
           fontFamily: F.display,
           fontSize: 16,
           lineHeight: 1.55,
-          color: C.slate,
-          opacity: 0.75,
+          color: C.slateMuted,
           margin: 0,
         }}
       >
@@ -2046,8 +2053,7 @@ function Trust() {
                   fontFamily: F.display,
                   fontSize: isPhone ? 15 : 14,
                   lineHeight: 1.55,
-                  color: C.slate,
-                  opacity: 0.72,
+                  color: C.slateMuted,
                   margin: 0,
                 }}
               >
@@ -2492,8 +2498,7 @@ function Story() {
             style={{
               fontFamily: F.body,
               fontSize: 16,
-              color: C.slate,
-              opacity: 0.7,
+              color: C.slateMuted,
               marginTop: 56,
               fontStyle: "italic",
             }}
@@ -2574,47 +2579,12 @@ function FinalCTA() {
         </Rise>
         <Rise delay={220}>
           <div style={{ display: "flex", gap: 14, marginTop: 56, flexWrap: "wrap" }}>
-            <a
-              href={APP.find}
-              style={{
-                background: C.amber,
-                color: C.slate,
-                border: 0,
-                borderRadius: 999,
-                padding: "18px 30px",
-                fontFamily: F.display,
-                fontWeight: 600,
-                fontSize: 16,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                cursor: "pointer",
-                textDecoration: "none",
-                boxShadow: "0 14px 40px -12px rgba(232,160,64,0.5)",
-              }}
-            >
+            <HoverButton href={APP.find} variant="primary" size="lg">
               Find a spot <Icon name="arrow-r" size={16} color={C.slate} stroke={2.2} />
-            </a>
-            <a
-              href={APP.list}
-              style={{
-                background: "transparent",
-                color: C.warm,
-                border: "1px solid rgba(245,240,235,0.28)",
-                borderRadius: 999,
-                padding: "18px 30px",
-                fontFamily: F.display,
-                fontWeight: 600,
-                fontSize: 16,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                cursor: "pointer",
-                textDecoration: "none",
-              }}
-            >
+            </HoverButton>
+            <HoverButton href={APP.list} variant="ghostBordered" size="lg" tone="dark">
               List your driveway <Icon name="arrow-r" size={16} color={C.warm} stroke={2.2} />
-            </a>
+            </HoverButton>
           </div>
         </Rise>
       </div>
