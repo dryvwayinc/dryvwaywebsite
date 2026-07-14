@@ -187,17 +187,26 @@ function Icon({
 }
 
 // ------------------------------------------------------------------
-// Brandmark — Dryvway logo mark
+// Wordmark — Dryvway logo (orange on light backgrounds, white on dark)
 // ------------------------------------------------------------------
-function Brandmark({ size = 30 }: { size?: number }) {
+const WORDMARK_RATIO = 491 / 120;
+function Wordmark({
+  height = 32,
+  white = false,
+  priority = false,
+}: {
+  height?: number;
+  white?: boolean;
+  priority?: boolean;
+}) {
   return (
     <Image
-      src="/logo.png"
+      src={white ? "/brand/wordmark-white.png" : "/brand/wordmark.png"}
       alt="Dryvway"
-      width={size}
-      height={size}
-      priority
-      style={{ display: "block", borderRadius: 7 }}
+      width={Math.round(height * WORDMARK_RATIO)}
+      height={height}
+      priority={priority}
+      style={{ display: "block" }}
     />
   );
 }
@@ -789,19 +798,7 @@ function Nav() {
           }}
           onClick={() => setOpen(false)}
         >
-          <Brandmark size={42} />
-          <span
-            style={{
-              fontFamily: F.display,
-              fontWeight: 600,
-              fontSize: 22,
-              letterSpacing: "-0.02em",
-              color: C.slate,
-              whiteSpace: "nowrap",
-            }}
-          >
-            Dryvway Inc.
-          </span>
+          <Wordmark height={34} priority />
         </a>
         <div style={{ flex: 1 }} />
         {compact ? (
@@ -2659,7 +2656,7 @@ function Footer() {
           }}
         >
           <div>
-            <Brandmark size={44} />
+            <Wordmark white height={36} />
             <p
               style={{
                 fontFamily: F.display,

@@ -49,14 +49,15 @@ function HomeLink({ children }: { children: ReactNode }) {
   );
 }
 
-function Brandmark({ size = 30 }: { size?: number }) {
+const WORDMARK_RATIO = 491 / 120;
+function Wordmark({ height = 32, white = false }: { height?: number; white?: boolean }) {
   return (
     <Image
-      src="/logo.png"
+      src={white ? "/brand/wordmark-white.png" : "/brand/wordmark.png"}
       alt="Dryvway"
-      width={size}
-      height={size}
-      style={{ display: "block", borderRadius: 7 }}
+      width={Math.round(height * WORDMARK_RATIO)}
+      height={height}
+      style={{ display: "block" }}
     />
   );
 }
@@ -95,7 +96,7 @@ export function LegalShell({
           }}
         >
           <Link href="/" style={{ display: "inline-flex", textDecoration: "none" }}>
-            <Brandmark size={42} />
+            <Wordmark height={32} />
           </Link>
           <div style={{ flex: 1 }} />
           <HomeLink>← Back to home</HomeLink>
@@ -140,7 +141,7 @@ export function LegalShell({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <Brandmark size={38} />
+            <Wordmark white height={28} />
             <span
               style={{
                 fontFamily: F.display,

@@ -32,11 +32,13 @@ export const metadata: Metadata = {
     siteName: "Dryvway",
     title: "Dryvway — Your driveway. Their destination.",
     description: DESCRIPTION,
+    images: [{ url: "/brand/og.png", width: 1200, height: 630, alt: "Dryvway" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Dryvway — Your driveway. Their destination.",
     description: DESCRIPTION,
+    images: ["/brand/og.png"],
   },
 };
 
