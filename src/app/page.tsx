@@ -2725,6 +2725,10 @@ function Footer() {
             <a href="/terms" style={{ color: "inherit", textDecoration: "none" }}>
               Terms
             </a>
+            {" · "}
+            <a href="/delete-account" style={{ color: "inherit", textDecoration: "none" }}>
+              Delete account
+            </a>
             {" · Insurance"}
           </span>
         </div>
