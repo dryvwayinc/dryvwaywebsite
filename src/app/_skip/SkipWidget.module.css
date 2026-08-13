@@ -21,12 +21,15 @@
 
 /* ---------- launcher: Skip stands on his own shadow ---------- */
 
+/* The mascot's 440×340 viewBox carries its own padding (~16px left, ~9px
+   under the shadow at this scale), so small offsets put his visible body a
+   comfortable ~20px from each screen edge — in the corner, not floating. */
 .launcher {
   position: fixed;
-  left: 20px;
-  bottom: 20px;
+  left: 6px;
+  bottom: 10px;
   z-index: 1000;
-  width: 80px;
+  width: 116px;
   padding: 0;
   border: none;
   background: transparent;
@@ -35,29 +38,51 @@
 }
 .launcher:focus-visible {
   outline: 2px solid var(--dv-amber-deep);
-  outline-offset: 6px;
-  border-radius: 16px;
+  outline-offset: 4px;
+  border-radius: 18px;
 }
 
-/* Gentle grow from the ground up on hover/focus. */
+/* Gentle grow from the ground up on hover/focus — subtle at this size. */
 .grow {
+  position: relative;
   display: block;
   transform-origin: 50% 88%;
   transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+/* Ambient ground boost: the mascot's own ellipse reads lighter at 116px, so
+   a soft radial under his feet deepens the grounding. Scales with the grow
+   (it lives on the transformed element), so his feet stay planted. */
+.grow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  width: 56%;
+  height: 10px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    closest-side,
+    rgba(44, 44, 42, 0.12),
+    rgba(44, 44, 42, 0)
+  );
+  pointer-events: none;
+}
 .launcher:hover .grow,
 .launcher:focus-visible .grow {
-  transform: scale(1.08);
+  transform: scale(1.04);
 }
 .launcher:active .grow {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
-/* Greeting speech bubble — decorative; the button label carries semantics. */
+/* Greeting speech bubble — decorative; the button label carries semantics.
+   Left-anchored so it opens toward the right (never clips at the screen
+   edge); the bottom offset reaches into the viewBox's empty headroom so the
+   bubble sits just above Skip's head instead of floating in dead space. */
 .greet {
   position: absolute;
-  left: 2px;
-  bottom: calc(100% + 14px);
+  left: 12px;
+  bottom: calc(100% - 8px);
   white-space: nowrap;
   background: var(--dv-paper);
   color: var(--dv-slate);
@@ -79,7 +104,7 @@
 .greet::after {
   content: "";
   position: absolute;
-  left: 16px;
+  left: 30px;
   bottom: -5.5px;
   width: 10px;
   height: 10px;
@@ -92,6 +117,16 @@
 .greetOn {
   opacity: 1;
   transform: none;
+}
+
+/* Mobile: smaller Skip so he doesn't crowd content on narrow screens (the
+   open bottom sheet still covers him — its z-index is higher). */
+@media (max-width: 767px) {
+  .launcher {
+    width: 92px;
+    left: 6px;
+    bottom: 8px;
+  }
 }
 
 /* ---------- panel entrance ---------- */

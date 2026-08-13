@@ -152,9 +152,11 @@ export function SkipWidget() {
     : {
         ...panelBase,
         left: 20,
-        bottom: 96,
+        // Anchored above the launcher: the 116px-wide Skip stands ~100px
+        // tall from the viewport bottom, so the panel starts at 112.
+        bottom: 112,
         width: 380,
-        height: "min(560px, calc(100dvh - 120px))",
+        height: "min(560px, calc(100dvh - 136px))",
         borderRadius: 20,
       };
 
