@@ -152,7 +152,11 @@
 
 /* ---------- interactive states ---------- */
 
+/* Base background/border/color live here, not inline — an inline style would
+   win over the :hover/:focus rules below and silently disable them. */
 .iconBtn {
+  background: transparent;
+  color: var(--dv-stone);
   transition:
     background 160ms ease,
     color 160ms ease;
@@ -167,6 +171,9 @@
 }
 
 .chip {
+  border: 1px solid var(--dv-line);
+  background: var(--dv-paper);
+  color: var(--dv-slate);
   transition:
     background 180ms ease,
     border-color 180ms ease,
@@ -186,6 +193,9 @@
 }
 
 .input {
+  border: 1px solid var(--dv-line);
+  background: var(--dv-paper);
+  color: var(--dv-slate);
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,

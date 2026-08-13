@@ -28,6 +28,7 @@ const VARS = {
   "--dv-amber-soft": C.amberSoft,
   "--dv-paper": C.paper,
   "--dv-slate": C.slate,
+  "--dv-stone": C.stone,
   "--dv-warm-deep": C.warmDeep,
   "--dv-line": C.stoneLine,
 } as CSSProperties;
@@ -211,6 +212,8 @@ export function SkipWidget() {
               onClick={() => setOpen(false)}
               aria-label="Close Ask Skip"
               className={styles.iconBtn}
+              // Base background/color live in .iconBtn — inline copies here
+              // would shadow the :hover rule.
               style={{
                 width: 30,
                 height: 30,
@@ -219,11 +222,9 @@ export function SkipWidget() {
                 placeItems: "center",
                 border: "none",
                 borderRadius: "50%",
-                background: "transparent",
                 cursor: "pointer",
                 fontSize: 20,
                 lineHeight: 1,
-                color: C.stone,
                 padding: 0,
               }}
             >
@@ -272,10 +273,9 @@ export function SkipWidget() {
                       key={f.id}
                       onClick={() => send(f.question)}
                       className={styles.chip}
+                      // Base border/background/color live in .chip — inline
+                      // copies here would shadow the :hover rule.
                       style={{
-                        border: `1px solid ${C.stoneLine}`,
-                        background: C.paper,
-                        color: C.slate,
                         borderRadius: 999,
                         padding: "8px 14px",
                         fontSize: 13,
@@ -351,16 +351,15 @@ export function SkipWidget() {
               disabled={sending}
               aria-label="Message Skip"
               className={styles.input}
+              // Base border/background/color live in .input — inline copies
+              // here would shadow the :focus rule.
               style={{
                 flex: 1,
                 minWidth: 0,
-                border: `1px solid ${C.stoneLine}`,
                 borderRadius: 999,
                 padding: "11px 16px",
                 fontSize: 14,
                 fontFamily: F.display,
-                color: C.slate,
-                background: C.paper,
               }}
             />
             <button
