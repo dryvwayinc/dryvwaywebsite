@@ -1,5 +1,5 @@
 /**
- * Skip pose table — the mascot's five states as data.
+ * Skip pose table — the mascot's seven states as data.
  *
  * Skip is built from the 13 road-line dashes of the Dryvway "D". Every pose is
  * a full description of where each of the 13 pieces (plus eyes, mouth, shadow)

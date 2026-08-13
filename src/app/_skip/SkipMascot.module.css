@@ -4,7 +4,7 @@
  * transform or opacity (compositor-only).
  *
  * Palette + easing arrive as CSS custom properties set on the component root
- * from lib/designTokens.ts (--skip-amber, --skip-ink, --skip-highlight,
+ * from ../theme (--skip-amber, --skip-ink, --skip-highlight,
  * --skip-shadow, --skip-bounce). No hex values in this file, so a future dark
  * theme only overrides the variables.
  */

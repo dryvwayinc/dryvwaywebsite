@@ -57,6 +57,14 @@ export async function sendChat(messages: ChatTurn[]): Promise<ChatReply> {
 // mode) and the widget must degrade to in-memory state, never crash.
 const STORAGE_KEY = "dryvway-skip-chat";
 
+function isChatTurn(value: unknown): value is ChatTurn {
+  if (typeof value !== "object" || value === null) return false;
+  const { role, content } = value as { role?: unknown; content?: unknown };
+  return (
+    (role === "user" || role === "assistant") && typeof content === "string"
+  );
+}
+
 export function loadThread(): { messages: ChatTurn[]; suggestHuman: boolean } {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -64,7 +72,7 @@ export function loadThread(): { messages: ChatTurn[]; suggestHuman: boolean } {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed?.messages)) {
         return {
-          messages: parsed.messages,
+          messages: parsed.messages.filter(isChatTurn),
           suggestHuman: Boolean(parsed.suggestHuman),
         };
       }

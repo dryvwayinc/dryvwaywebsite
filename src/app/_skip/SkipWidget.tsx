@@ -20,6 +20,19 @@ import {
 const GREETING =
   "Hi, I'm Skip — the Dryvway helper. Ask me anything about parking with Dryvway or listing your driveway.";
 
+// The backend validates `messages` at max_length=30 and only applies its own
+// 15-user-turn cap AFTER that check passes — so a 16th user turn (31
+// messages) would 422 before the cap logic ever runs. Both endings hand off
+// to a human with the same copy, so the conversation never dead-ends.
+const MAX_USER_TURNS = 15;
+const MAX_MESSAGES = 30;
+const CAP_HANDOFF =
+  "We've covered a lot — for anything more, our human team is the best next step.";
+const TOO_LONG_HANDOFF =
+  "That message couldn't be sent — it may be too long. Our human team can help with anything bigger.";
+
+const PANEL_ID = "ask-skip-panel";
+
 // Theme colors handed to the CSS module — hover/focus/entrance states live
 // there, and CSS can't import from theme.ts.
 const VARS = {
@@ -91,10 +104,33 @@ export function SkipWidget() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, sending, open]);
 
+  // Don't let a stale error greet the next open.
+  useEffect(() => {
+    if (!open) setError(null);
+  }, [open]);
+
   async function send(raw: string) {
     const text = raw.trim();
     if (!text || sending) return;
     const next: ChatTurn[] = [...messages, { role: "user", content: text }];
+
+    // The 16th user turn would 422 against the backend's own message-array
+    // limit before its conversation cap ever fires — head that off here so
+    // the thread always ends in a handoff, never a dead-end retry loop.
+    const userTurns = next.filter((m) => m.role === "user").length;
+    if (userTurns > MAX_USER_TURNS || next.length > MAX_MESSAGES) {
+      const done: ChatTurn[] = [
+        ...next,
+        { role: "assistant", content: CAP_HANDOFF },
+      ];
+      setMessages(done);
+      setInput("");
+      setError(null);
+      setSuggestHuman(true);
+      saveThread(done, true);
+      return;
+    }
+
     setMessages(next);
     setInput("");
     setError(null);
@@ -113,11 +149,17 @@ export function SkipWidget() {
       // Roll back the optimistic turn; hand the text back for retry.
       setMessages(messages);
       setInput(text);
-      setError(
-        e instanceof SkipApiError && e.status === 429
-          ? "Skip needs a breather — try again in a minute."
-          : "Skip couldn't be reached — try again shortly."
-      );
+      if (e instanceof SkipApiError && e.status === 422) {
+        // Non-transient — retrying the same payload will 422 again.
+        setSuggestHuman(true);
+        setError(TOO_LONG_HANDOFF);
+      } else {
+        setError(
+          e instanceof SkipApiError && e.status === 429
+            ? "Skip needs a breather — try again in a minute."
+            : "Skip couldn't be reached — try again shortly."
+        );
+      }
     } finally {
       setSending(false);
     }
@@ -169,6 +211,7 @@ export function SkipWidget() {
     <>
       {open && (
         <div
+          id={PANEL_ID}
           className={styles.panel}
           style={panelStyle}
           role="dialog"
@@ -349,6 +392,7 @@ export function SkipWidget() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about Dryvway…"
               disabled={sending}
+              maxLength={4000}
               aria-label="Message Skip"
               className={styles.input}
               // Base border/background/color live in .input — inline copies
@@ -388,13 +432,19 @@ export function SkipWidget() {
       {/* Launcher — always visible, bottom-left. Skip IS the button: no
           circle chrome, he stands on his own rendered ground shadow. */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          // Blur so a tap doesn't leave the launcher focused — otherwise
+          // Skip's wave + greeting bubble stick around after the tap ends.
+          e.currentTarget.blur();
+          setOpen((v) => !v);
+        }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         aria-label="Ask Skip — Dryvway help"
         aria-expanded={open}
+        aria-controls={PANEL_ID}
         className={styles.launcher}
         style={VARS}
       >
