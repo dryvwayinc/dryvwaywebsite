@@ -231,6 +231,7 @@ export function SkipMascot({
       commit()
       return
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate: mascot pose/morph state must sync synchronously in this effect
     setSwapping(true)
     // 220ms = the .status opacity transition in SkipMascot.module.css.
     labelTimerRef.current = setTimeout(commit, 220)
