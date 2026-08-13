@@ -160,7 +160,7 @@ export function SkipWidget() {
                 Ask Skip
               </div>
               <div style={{ fontSize: 12, color: C.stone }}>
-                Dryvway&#39;s help assistant
+                Dryvway’s help assistant
               </div>
             </div>
             <button
