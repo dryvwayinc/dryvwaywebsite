@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { C, F } from "../theme";
 import { SkipMascot } from "./SkipMascot";
+import styles from "./SkipWidget.module.css";
 import {
   MAILTO_HREF,
   SUPPORT_EMAIL,
@@ -19,6 +20,25 @@ import {
 const GREETING =
   "Hi, I'm Skip — the Dryvway helper. Ask me anything about parking with Dryvway or listing your driveway.";
 
+// Theme colors handed to the CSS module — hover/focus/entrance states live
+// there, and CSS can't import from theme.ts.
+const VARS = {
+  "--dv-amber": C.amber,
+  "--dv-amber-deep": C.amberDeep,
+  "--dv-amber-soft": C.amberSoft,
+  "--dv-paper": C.paper,
+  "--dv-slate": C.slate,
+  "--dv-warm-deep": C.warmDeep,
+  "--dv-line": C.stoneLine,
+} as CSSProperties;
+
+// The site's decorative serif-italic accent (same recipe as the landing page).
+const serifAccent: CSSProperties = {
+  fontFamily: F.body,
+  fontStyle: "italic",
+  fontWeight: 400,
+};
+
 export function SkipWidget() {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -29,6 +49,8 @@ export function SkipWidget() {
   const [error, setError] = useState<string | null>(null);
   const [faqs, setFaqs] = useState<SupportFaq[] | null>(null);
   const [faqsFailed, setFaqsFailed] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Restore the thread once on mount (client only — avoids hydration drift).
@@ -100,14 +122,21 @@ export function SkipWidget() {
     }
   }
 
+  // Greet (wave + speech bubble) on hover/focus — never while the panel is
+  // open. Initial value is false on server and client alike, so the first
+  // paint stays hydration-safe.
+  const greetActive = (hovered || focused) && !open;
+
   const panelBase: CSSProperties = {
+    ...VARS,
     position: "fixed",
     zIndex: 1001,
     display: "flex",
     flexDirection: "column",
     background: C.paper,
     border: `1px solid ${C.stoneLine}`,
-    boxShadow: "0 24px 64px rgba(44,44,42,0.22)",
+    boxShadow:
+      "0 24px 64px -12px rgba(44,44,42,0.26), 0 6px 20px rgba(44,44,42,0.08)",
     overflow: "hidden",
     fontFamily: F.display,
   };
@@ -136,19 +165,24 @@ export function SkipWidget() {
   return (
     <>
       {open && (
-        <div style={panelStyle} role="dialog" aria-label="Ask Skip — Dryvway help">
+        <div
+          className={styles.panel}
+          style={panelStyle}
+          role="dialog"
+          aria-label="Ask Skip — Dryvway help"
+        >
           {/* Header */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 10,
-              padding: "12px 16px",
+              gap: 12,
+              padding: "14px 16px 12px",
               borderBottom: `1px solid ${C.stoneLineSoft}`,
               background: C.warmSoftest,
             }}
           >
-            <div style={{ width: 44, flexShrink: 0 }}>
+            <div className={styles.mascot} style={{ width: 48, flexShrink: 0 }}>
               <SkipMascot
                 pose={sending ? "loading" : "idle"}
                 variant="inline"
@@ -156,24 +190,39 @@ export function SkipWidget() {
               />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 15, color: C.slate }}>
-                Ask Skip
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: 17,
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1.2,
+                  color: C.slate,
+                }}
+              >
+                Ask <span style={serifAccent}>Skip</span>
               </div>
-              <div style={{ fontSize: 12, color: C.stone }}>
+              <div style={{ fontSize: 12, color: C.stone, marginTop: 2 }}>
                 Dryvway’s help assistant
               </div>
             </div>
             <button
               onClick={() => setOpen(false)}
               aria-label="Close Ask Skip"
+              className={styles.iconBtn}
               style={{
+                width: 30,
+                height: 30,
+                flexShrink: 0,
+                display: "grid",
+                placeItems: "center",
                 border: "none",
+                borderRadius: "50%",
                 background: "transparent",
                 cursor: "pointer",
                 fontSize: 20,
                 lineHeight: 1,
                 color: C.stone,
-                padding: 6,
+                padding: 0,
               }}
             >
               ×
@@ -183,7 +232,12 @@ export function SkipWidget() {
           {/* Messages */}
           <div
             ref={scrollRef}
-            style={{ flex: 1, overflowY: "auto", padding: 16 }}
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              padding: "18px 18px 8px",
+            }}
           >
             <Bubble role="assistant">{GREETING}</Bubble>
             {messages.map((m, i) => (
@@ -191,49 +245,64 @@ export function SkipWidget() {
                 {m.content}
               </Bubble>
             ))}
-            {sending && <Bubble role="assistant">Skip is thinking…</Bubble>}
+            {sending && (
+              <Bubble role="assistant" thinking>
+                Skip is thinking…
+              </Bubble>
+            )}
             {chips.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginTop: 12,
-                }}
-              >
-                {chips.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => send(f.question)}
-                    style={{
-                      border: `1px solid ${C.stoneLine}`,
-                      background: C.paper,
-                      color: C.slate,
-                      borderRadius: 999,
-                      padding: "7px 12px",
-                      fontSize: 13,
-                      fontFamily: F.display,
-                      cursor: "pointer",
-                      textAlign: "left",
-                    }}
-                  >
-                    {f.question}
-                  </button>
-                ))}
+              <div style={{ marginTop: 16 }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: C.stone,
+                    marginBottom: 8,
+                  }}
+                >
+                  Popular questions
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {chips.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => send(f.question)}
+                      className={styles.chip}
+                      style={{
+                        border: `1px solid ${C.stoneLine}`,
+                        background: C.paper,
+                        color: C.slate,
+                        borderRadius: 999,
+                        padding: "8px 14px",
+                        fontSize: 13,
+                        lineHeight: 1.4,
+                        fontFamily: F.display,
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      {f.question}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {suggestHuman && (
               <a
                 href={MAILTO_HREF}
+                className={styles.mailto}
                 style={{
                   display: "inline-block",
-                  marginTop: 12,
+                  marginTop: 14,
                   background: C.amber,
                   color: C.slate,
                   fontWeight: 600,
                   fontSize: 13,
+                  fontFamily: F.display,
                   borderRadius: 999,
-                  padding: "9px 16px",
+                  padding: "10px 18px",
                   textDecoration: "none",
                 }}
               >
@@ -242,13 +311,16 @@ export function SkipWidget() {
             )}
             {error && (
               <div
+                role="status"
                 style={{
                   marginTop: 12,
                   fontSize: 13,
-                  color: C.amberDeep,
+                  lineHeight: 1.45,
+                  color: C.slate,
                   background: C.amberSoft,
-                  borderRadius: 10,
-                  padding: "8px 12px",
+                  border: "1px solid rgba(201,130,35,0.3)",
+                  borderRadius: 12,
+                  padding: "10px 14px",
                 }}
               >
                 {error}
@@ -264,9 +336,10 @@ export function SkipWidget() {
             }}
             style={{
               display: "flex",
-              gap: 8,
-              padding: 12,
+              gap: 10,
+              padding: "12px 14px 14px",
               borderTop: `1px solid ${C.stoneLineSoft}`,
+              background: C.warmSoftest,
             }}
           >
             <input
@@ -275,30 +348,33 @@ export function SkipWidget() {
               placeholder="Ask about Dryvway…"
               disabled={sending}
               aria-label="Message Skip"
+              className={styles.input}
               style={{
                 flex: 1,
+                minWidth: 0,
                 border: `1px solid ${C.stoneLine}`,
-                borderRadius: 12,
-                padding: "10px 12px",
+                borderRadius: 999,
+                padding: "11px 16px",
                 fontSize: 14,
                 fontFamily: F.display,
                 color: C.slate,
-                outline: "none",
                 background: C.paper,
               }}
             />
             <button
               type="submit"
               disabled={sending || !input.trim()}
+              className={styles.send}
               style={{
+                flexShrink: 0,
                 border: "none",
-                borderRadius: 12,
-                padding: "10px 16px",
+                borderRadius: 999,
+                padding: "11px 18px",
                 fontSize: 14,
                 fontWeight: 600,
                 fontFamily: F.display,
                 background: sending || !input.trim() ? C.warmDeep : C.amber,
-                color: C.slate,
+                color: sending || !input.trim() ? C.stone : C.slate,
                 cursor: sending || !input.trim() ? "default" : "pointer",
               }}
             >
@@ -308,27 +384,35 @@ export function SkipWidget() {
         </div>
       )}
 
-      {/* Launcher — always visible, bottom-left */}
+      {/* Launcher — always visible, bottom-left. Skip IS the button: no
+          circle chrome, he stands on his own rendered ground shadow. */}
       <button
         onClick={() => setOpen((v) => !v)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         aria-label="Ask Skip — Dryvway help"
         aria-expanded={open}
-        style={{
-          position: "fixed",
-          left: 20,
-          bottom: 20,
-          zIndex: 1000,
-          width: 64,
-          height: 64,
-          borderRadius: "50%",
-          border: `2px solid ${C.amber}`,
-          background: C.paper,
-          boxShadow: "0 10px 30px rgba(44,44,42,0.18)",
-          cursor: "pointer",
-          padding: 6,
-        }}
+        className={styles.launcher}
+        style={VARS}
       >
-        <SkipMascot pose="idle" variant="inline" showLabel={false} />
+        <div
+          aria-hidden="true"
+          className={
+            greetActive ? `${styles.greet} ${styles.greetOn}` : styles.greet
+          }
+          style={{ fontFamily: F.display }}
+        >
+          <em style={serifAccent}>Hi!</em> Ask me anything about Dryvway
+        </div>
+        <div className={`${styles.grow} ${styles.mascot}`}>
+          <SkipMascot
+            pose={greetActive ? "waving" : "idle"}
+            variant="inline"
+            showLabel={false}
+          />
+        </div>
       </button>
     </>
   );
@@ -336,9 +420,11 @@ export function SkipWidget() {
 
 function Bubble({
   role,
+  thinking = false,
   children,
 }: {
   role: "user" | "assistant";
+  thinking?: boolean;
   children: React.ReactNode;
 }) {
   const isUser = role === "user";
@@ -351,16 +437,19 @@ function Bubble({
       }}
     >
       <div
+        className={thinking ? styles.thinkingBubble : undefined}
         style={{
           maxWidth: "85%",
-          borderRadius: 14,
-          padding: "9px 13px",
+          borderRadius: isUser ? "16px 16px 5px 16px" : "16px 16px 16px 5px",
+          padding: "10px 14px",
           fontSize: 14,
-          lineHeight: 1.45,
+          lineHeight: 1.5,
           whiteSpace: "pre-wrap",
-          color: C.slate,
-          background: isUser ? C.amberSoft : C.warmSoftest,
-          border: isUser ? "none" : `1px solid ${C.stoneLineSoft}`,
+          color: thinking ? C.stone : C.slate,
+          background: isUser ? C.amberSoft : C.warm,
+          border: isUser ? "1px solid rgba(232,160,64,0.3)" : "none",
+          fontFamily: thinking ? F.body : undefined,
+          fontStyle: thinking ? "italic" : undefined,
         }}
       >
         {children}
