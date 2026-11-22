@@ -58,8 +58,6 @@ export function ApplicationDetail({
 
   useEffect(() => {
     let cancelled = false;
-    setApp(null);
-    setLoadError(null);
     api
       .getApplication(id)
       .then((d) => {

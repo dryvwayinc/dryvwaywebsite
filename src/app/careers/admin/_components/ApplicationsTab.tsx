@@ -34,6 +34,10 @@ export function ApplicationsTab({ api }: { api: AdminApi }) {
       : new URLSearchParams(window.location.search).get("application"),
   );
   const lastTrigger = useRef<HTMLElement | null>(null);
+  const openIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    openIdRef.current = openId;
+  }, [openId]);
 
   const [attempt, setAttempt] = useState(0);
 
@@ -77,7 +81,8 @@ export function ApplicationsTab({ api }: { api: AdminApi }) {
 
   function onDeleted(id: string) {
     setApps((list) => list.filter((a) => a.id !== id));
-    close();
+    // A late delete for a previously open applicant must not close the current panel.
+    if (openIdRef.current === id) close();
   }
 
   const shown = filterApplications(apps, roleFilter, statusFilter);
@@ -154,7 +159,7 @@ export function ApplicationsTab({ api }: { api: AdminApi }) {
       </ul>
 
       {openId && (
-        <ApplicationDetail api={api} id={openId} onClose={close} onChanged={onChanged} onDeleted={onDeleted} />
+        <ApplicationDetail key={openId} api={api} id={openId} onClose={close} onChanged={onChanged} onDeleted={onDeleted} />
       )}
     </div>
   );
