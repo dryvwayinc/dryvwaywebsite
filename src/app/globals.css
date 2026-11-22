@@ -1,7 +1,5 @@
 :root {
   color-scheme: light;
-  --font-display-stack: var(--font-display), -apple-system, "Helvetica Neue", system-ui, sans-serif;
-  --font-body-stack: var(--font-body), "Tiempos Text", Georgia, serif;
 }
 
 * { box-sizing: border-box; }
@@ -11,6 +9,8 @@ html, body { margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 body {
+  --font-display-stack: var(--font-display), -apple-system, "Helvetica Neue", system-ui, sans-serif;
+  --font-body-stack: var(--font-body), "Tiempos Text", Georgia, serif;
   background: #F5F0EB;
   color: #2C2C2A;
   font-family: var(--font-display-stack);
