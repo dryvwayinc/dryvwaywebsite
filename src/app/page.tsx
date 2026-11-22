@@ -852,6 +852,7 @@ function Nav() {
             <NavLink href="#calculator">List your driveway</NavLink>
             <NavLink href="#how">How it works</NavLink>
             <NavLink href="#trust">Help</NavLink>
+            <NavLink href="/careers">Careers</NavLink>
             <div style={{ width: 1, height: 18, background: C.stoneLine }} />
             <HoverButton variant="ghost" href={APP.signIn}>
               Sign in
