@@ -115,7 +115,17 @@ export default function PrivacyPage() {
         </P>
       </LegalSection>
 
-      <LegalSection num="10" title="Contact us">
+      <LegalSection num="10" title="Job applicants">
+        <P>
+          If you apply for a job at Dryvway, we collect what you send us: your name, email,
+          phone number if you give it, any link you share, your answers, and your résumé. We
+          use this only to review your application and contact you about it. Only the Dryvway
+          founders can see it. To have your application deleted, email{" "}
+          <MailLink email="founders@dryvwayinc.com" />.
+        </P>
+      </LegalSection>
+
+      <LegalSection num="11" title="Contact us">
         <P>If you have questions about this privacy policy, please contact us at:</P>
         <Contact>
           <BulletList
