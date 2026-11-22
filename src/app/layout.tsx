@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
+import { SkipWidget } from "./_skip/SkipWidget";
 
 const inter = Inter({
   variable: "--font-display",
@@ -51,6 +52,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${sourceSerif.variable}`}>
         {children}
+        <SkipWidget />
       </body>
     </html>
   );

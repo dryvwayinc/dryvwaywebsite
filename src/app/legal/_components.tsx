@@ -62,6 +62,39 @@ function Wordmark({ height = 32, white = false }: { height?: number; white?: boo
   );
 }
 
+export function MinimalHeader() {
+  return (
+    <header
+      style={{
+        borderBottom: `1px solid ${C.stoneLine}`,
+        background: "rgba(245,240,235,0.82)",
+        backdropFilter: "saturate(140%) blur(14px)",
+        WebkitBackdropFilter: "saturate(140%) blur(14px)",
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "16px clamp(20px, 5vw, 32px)",
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
+        }}
+      >
+        <Link href="/" style={{ display: "inline-flex", textDecoration: "none" }}>
+          <Wordmark height={32} />
+        </Link>
+        <div style={{ flex: 1 }} />
+        <HomeLink>← Back to home</HomeLink>
+      </div>
+    </header>
+  );
+}
+
 export function LegalShell({
   title,
   effectiveDate,
@@ -73,35 +106,7 @@ export function LegalShell({
 }) {
   return (
     <div style={{ background: C.warm, minHeight: "100vh", color: C.slate }}>
-      {/* Top bar */}
-      <header
-        style={{
-          borderBottom: `1px solid ${C.stoneLine}`,
-          background: "rgba(245,240,235,0.82)",
-          backdropFilter: "saturate(140%) blur(14px)",
-          WebkitBackdropFilter: "saturate(140%) blur(14px)",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1280,
-            margin: "0 auto",
-            padding: "16px clamp(20px, 5vw, 32px)",
-            display: "flex",
-            alignItems: "center",
-            gap: 24,
-          }}
-        >
-          <Link href="/" style={{ display: "inline-flex", textDecoration: "none" }}>
-            <Wordmark height={32} />
-          </Link>
-          <div style={{ flex: 1 }} />
-          <HomeLink>← Back to home</HomeLink>
-        </div>
-      </header>
+      <MinimalHeader />
 
       {/* Title + body */}
       <main style={{ maxWidth: MEASURE, margin: "0 auto", padding: "clamp(48px, 9vw, 72px) clamp(20px, 5vw, 32px) 96px" }}>

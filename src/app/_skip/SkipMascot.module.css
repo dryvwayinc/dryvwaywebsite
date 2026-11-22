@@ -1,0 +1,216 @@
+/*
+ * Skip mascot — animation machinery only. Layout, type, and text color come
+ * from Tailwind utilities in SkipMascot.tsx. Every animated property here is
+ * transform or opacity (compositor-only).
+ *
+ * Palette + easing arrive as CSS custom properties set on the component root
+ * from ../theme (--skip-amber, --skip-ink, --skip-highlight,
+ * --skip-shadow, --skip-bounce). No hex values in this file, so a future dark
+ * theme only overrides the variables.
+ */
+
+.stage {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---------- morphing pieces ---------- */
+
+.piece {
+  transform-origin: 0 0;
+  transition:
+    transform 0.72s var(--skip-bounce),
+    opacity 0.45s ease;
+  will-change: transform;
+}
+.noAnim .piece {
+  transition: none !important;
+}
+
+.dashRect { fill: var(--skip-amber); }
+.eyeFill  { fill: var(--skip-ink); }
+.hl {
+  fill: var(--skip-highlight);
+  transition: transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.mouthPath {
+  stroke: var(--skip-ink);
+  stroke-width: 9;
+  stroke-linecap: round;
+  fill: none;
+}
+.shadowFill { fill: var(--skip-shadow); }
+
+/* Loading ring: the whole dash layer spins about the ring centre.
+   transform-origin is set inline from the RING constant in SkipMascot.tsx. */
+.spin {
+  animation: spin 3.2s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- idle life: float + blink ---------- */
+
+.floaty { animation: bob 3.4s ease-in-out infinite; }
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.squint { transform-origin: 0 0; }
+
+.blink {
+  transform-origin: 0 0;
+  animation: blink 4.2s infinite;
+}
+@keyframes blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  93%, 95%      { transform: scaleY(0.08); }
+  97%           { transform: scaleY(1); }
+}
+
+/* ==================== THINKING MODULE ====================
+   A calm "working on it" face while a request is in flight. Transform-only so
+   every layer runs on the compositor. Each layer sits on its own element so
+   transforms compose: .hl (gaze) · .squint (deep thought) · .blink · .mouthPath
+   (micro-smile) · .floaty (1.5px bob). Layer periods are co-prime-ish
+   (2.9 / 5.6 / 9.4 / 12.4s): they drift out of phase, so the combined motion
+   never visibly loops even though every layer is a fixed keyframe track. */
+
+/* gaze: left → centre → right → tiny up → centre; brief holds between moves */
+.thinking .hl { animation: thinkGaze 2.9s ease-in-out infinite; }
+@keyframes thinkGaze {
+  0%, 8%    { transform: translate(0, 0); }
+  16%, 30%  { transform: translate(-4px, 0); }
+  38%, 46%  { transform: translate(0, 0); }
+  54%, 68%  { transform: translate(6px, -1px); }
+  76%, 84%  { transform: translate(1px, -4px); }
+  92%, 100% { transform: translate(0, 0); }
+}
+
+/* blinks: two per 9.4s cycle at uneven spots → gaps of ~4.4s and ~5.0s,
+   so blinking stays in the 3–6s band but never lands on a fixed beat */
+.thinking .blink { animation: thinkBlink 9.4s infinite; }
+@keyframes thinkBlink {
+  0%, 44%      { transform: scaleY(1); }
+  45.5%, 46.5% { transform: scaleY(0.08); }
+  48%, 97%     { transform: scaleY(1); }
+  98.5%, 99.5% { transform: scaleY(0.08); }
+  100%         { transform: scaleY(1); }
+}
+
+/* deep thought: one slight squint every ~4 gaze cycles */
+.thinking .squint { animation: thinkSquint 12.4s ease-in-out infinite; }
+@keyframes thinkSquint {
+  0%, 74%   { transform: scaleY(1); }
+  78%, 88%  { transform: scaleY(0.84); }
+  94%, 100% { transform: scaleY(1); }
+}
+
+/* mouth: barely-there press, then a soft lift timed to the up-glance
+   (same 2.9s clock as the gaze = the "realization" beat) */
+.thinking .mouthPath {
+  transform-origin: 0 0;
+  animation: thinkMouth 2.9s ease-in-out infinite;
+}
+@keyframes thinkMouth {
+  0%        { transform: scale(1, 1); }
+  18%, 26%  { transform: scale(1.04, 0.95); }
+  42%, 66%  { transform: scale(1, 1); }
+  76%, 84%  { transform: scale(1.03, 1.12); }
+  94%, 100% { transform: scale(1, 1); }
+}
+
+/* presence: swap the 6px idle bob for a barely perceptible 1.5px one */
+.thinking .floaty { animation: thinkBob 5.6s ease-in-out infinite; }
+@keyframes thinkBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+/* ================== end THINKING MODULE ================== */
+
+/* ==================== SLEEPING MODULE ====================
+   Corner-launcher doze. Closed lids are a static transform (state, not
+   motion — kept under reduced motion, same squash the blink keyframe uses);
+   the only motion is a slow 2.5px breathing bob. */
+
+.sleeping .blink {
+  animation: none;
+  transform: scaleY(0.14);
+}
+.sleeping .floaty { animation: sleepBob 5.8s ease-in-out infinite; }
+@keyframes sleepBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2.5px); }
+}
+/* ================== end SLEEPING MODULE ================== */
+
+/* ---------- status label ---------- */
+
+/* 0.22s = the label-swap setTimeout in SkipMascot.tsx; keep in sync. */
+.status {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+.swap {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/* ---------- inline variant exit ---------- */
+
+.inline {
+  transition: opacity 0.3s ease;
+}
+.inlineAway {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- splash variant ---------- */
+
+.splash {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition:
+    transform 0.6s cubic-bezier(0.5, 0, 0.6, 1),
+    opacity 0.55s ease;
+}
+.away {
+  transform: scale(1.1);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- reduced motion ----------
+   Loops off entirely; state transitions snap (0.01s) so changes still resolve
+   visibly; opacity fades are kept — fades don't trigger vestibular response.
+   Duration lists map to each rule's transition-property order. */
+
+@media (prefers-reduced-motion: reduce) {
+  .piece  { transition-duration: 0.01s, 0.3s; } /* transform, opacity */
+  .hl     { transition-duration: 0.01s; }
+  .splash { transition-duration: 0.01s, 0.4s; } /* transform, opacity */
+  .status { transition-duration: 0.22s, 0.01s; } /* opacity, transform */
+
+  .floaty,
+  .blink,
+  .spin,
+  .thinking .hl,
+  .thinking .blink,
+  .thinking .squint,
+  .thinking .mouthPath,
+  .thinking .floaty,
+  .sleeping .floaty {
+    animation: none;
+  }
+}

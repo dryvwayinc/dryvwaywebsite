@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalShell title="Privacy Policy" effectiveDate="Effective May 29, 2026">
+    <LegalShell title="Privacy Policy" effectiveDate="Effective November 22, 2026">
       <LegalSection num="01" title="Information we collect">
         <P>We collect information that you provide directly to us, including:</P>
         <BulletList
@@ -115,7 +115,18 @@ export default function PrivacyPage() {
         </P>
       </LegalSection>
 
-      <LegalSection num="10" title="Contact us">
+      <LegalSection num="10" title="Job applicants">
+        <P>
+          If you apply for a job at Dryvway, we collect what you send us: your name, email,
+          phone number if you give it, any link you share, your answers, and your résumé. We
+          use this only to review your application and contact you about it. Only the Dryvway
+          founders review it. We store it with Google Firebase, and our email provider sends
+          the founders an alert for each application. To have your application deleted, email{" "}
+          <MailLink email="founders@dryvwayinc.com" />.
+        </P>
+      </LegalSection>
+
+      <LegalSection num="11" title="Contact us">
         <P>If you have questions about this privacy policy, please contact us at:</P>
         <Contact>
           <BulletList

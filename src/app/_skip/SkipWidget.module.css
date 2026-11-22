@@ -1,0 +1,283 @@
+/*
+ * Ask Skip widget — launcher, panel entrance, and interactive states that
+ * inline styles can't express (pseudo-classes, keyframes, reduced motion).
+ * Colors arrive as CSS custom properties (--dv-*) set inline from theme.ts;
+ * the only literals here are rgba() shadow tints of existing theme colors.
+ */
+
+/* The copied SkipMascot emits an app-style `sr-only` status span, but this
+   site has no global sr-only utility — scope one here or the text paints. */
+.mascot :global(.sr-only) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- launcher: Skip stands on his own shadow ---------- */
+
+/* The mascot's 440×340 viewBox carries its own padding (~16px left, ~9px
+   under the shadow at this scale), so small offsets put his visible body a
+   comfortable ~20px from each screen edge — in the corner, not floating. */
+.launcher {
+  position: fixed;
+  left: 6px;
+  bottom: 10px;
+  z-index: 1000;
+  width: 116px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.launcher:focus-visible {
+  outline: 2px solid var(--dv-amber-deep);
+  outline-offset: 4px;
+  border-radius: 18px;
+}
+
+/* Gentle grow from the ground up on hover/focus — subtle at this size. */
+.grow {
+  position: relative;
+  display: block;
+  transform-origin: 50% 88%;
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* Ambient ground boost: the mascot's own ellipse reads lighter at 116px, so
+   a soft radial under his feet deepens the grounding. Scales with the grow
+   (it lives on the transformed element), so his feet stay planted. */
+.grow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  width: 56%;
+  height: 10px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    closest-side,
+    rgba(44, 44, 42, 0.12),
+    rgba(44, 44, 42, 0)
+  );
+  pointer-events: none;
+}
+.launcher:hover .grow,
+.launcher:focus-visible .grow {
+  transform: scale(1.04);
+}
+.launcher:active .grow {
+  transform: scale(0.97);
+}
+
+/* Greeting speech bubble — decorative; the button label carries semantics.
+   Left-anchored so it opens toward the right (never clips at the screen
+   edge); the bottom offset reaches into the viewBox's empty headroom so the
+   bubble sits just above Skip's head instead of floating in dead space. */
+.greet {
+  position: absolute;
+  left: 12px;
+  bottom: calc(100% - 8px);
+  white-space: nowrap;
+  background: var(--dv-paper);
+  color: var(--dv-slate);
+  border: 1px solid var(--dv-line);
+  border-radius: 14px 14px 14px 4px;
+  padding: 8px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  box-shadow: 0 10px 26px -8px rgba(44, 44, 42, 0.22);
+  opacity: 0;
+  transform: translateY(6px) scale(0.94);
+  transform-origin: 12px 100%;
+  transition:
+    opacity 180ms ease,
+    transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+.greet::after {
+  content: "";
+  position: absolute;
+  left: 30px;
+  bottom: -5.5px;
+  width: 10px;
+  height: 10px;
+  background: var(--dv-paper);
+  border-right: 1px solid var(--dv-line);
+  border-bottom: 1px solid var(--dv-line);
+  border-bottom-right-radius: 2px;
+  transform: rotate(45deg);
+}
+.greetOn {
+  opacity: 1;
+  transform: none;
+}
+
+/* Mobile: smaller Skip so he doesn't crowd content on narrow screens (the
+   open bottom sheet still covers him — its z-index is higher). */
+@media (max-width: 767px) {
+  .launcher {
+    width: 92px;
+    left: 6px;
+    bottom: 8px;
+  }
+}
+
+/* ---------- panel entrance ---------- */
+
+.panel {
+  transform-origin: 12% 100%;
+  animation: panelIn 340ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes panelFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---------- interactive states ---------- */
+
+/* Base background/border/color live here, not inline — an inline style would
+   win over the :hover/:focus rules below and silently disable them. */
+.iconBtn {
+  background: transparent;
+  color: var(--dv-stone);
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+.iconBtn:hover {
+  background: var(--dv-warm-deep);
+  color: var(--dv-slate);
+}
+.iconBtn:focus-visible {
+  outline: 2px solid var(--dv-amber-deep);
+  outline-offset: 2px;
+}
+
+.chip {
+  border: 1px solid var(--dv-line);
+  background: var(--dv-paper);
+  color: var(--dv-slate);
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.chip:hover {
+  background: var(--dv-amber-soft);
+  border-color: var(--dv-amber);
+  transform: translateY(-1px);
+}
+.chip:active {
+  transform: none;
+}
+.chip:focus-visible {
+  outline: 2px solid var(--dv-amber-deep);
+  outline-offset: 2px;
+}
+
+.input {
+  border: 1px solid var(--dv-line);
+  background: var(--dv-paper);
+  color: var(--dv-slate);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--dv-amber);
+  background: var(--dv-paper);
+  box-shadow: 0 0 0 3px var(--dv-amber-soft);
+}
+.input:disabled {
+  opacity: 0.6;
+}
+
+.send {
+  transition:
+    transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 240ms ease,
+    background 180ms ease;
+}
+.send:hover:enabled {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px -8px rgba(232, 160, 64, 0.6);
+}
+.send:active:enabled {
+  transform: translateY(0) scale(0.96);
+  box-shadow: none;
+}
+.send:focus-visible {
+  outline: 2px solid var(--dv-amber-deep);
+  outline-offset: 2px;
+}
+
+.mailto {
+  transition:
+    transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 240ms ease;
+}
+.mailto:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px -8px rgba(232, 160, 64, 0.55);
+}
+.mailto:focus-visible {
+  outline: 2px solid var(--dv-amber-deep);
+  outline-offset: 2px;
+}
+
+/* "Skip is thinking…" breathes slowly while the request runs. */
+.thinkingBubble {
+  animation: think 2s ease-in-out infinite;
+}
+@keyframes think {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* ---------- reduced motion: keep fades, drop movement ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .grow,
+  .launcher:hover .grow,
+  .launcher:focus-visible .grow,
+  .launcher:active .grow {
+    transition: none;
+    transform: none;
+  }
+  .greet {
+    transform: none;
+    transition: opacity 180ms ease;
+  }
+  .panel {
+    animation: panelFade 200ms ease;
+  }
+  .chip,
+  .chip:hover,
+  .send:hover:enabled,
+  .send:active:enabled,
+  .mailto:hover {
+    transform: none;
+  }
+  .thinkingBubble {
+    animation: none;
+  }
+}
