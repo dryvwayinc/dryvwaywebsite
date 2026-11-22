@@ -136,7 +136,7 @@ export function ApplicationForm({
           overflowWrap: "anywhere",
         }}
       >
-        Thanks, {done.first}. We sent a confirmation to {done.email}.
+        Thanks, {done.first}. We got your application. If it&apos;s a fit, we&apos;ll reach out by email.
       </div>
     );
   }
