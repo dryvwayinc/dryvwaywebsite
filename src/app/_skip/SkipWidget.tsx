@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
 import { C, F } from "../theme";
 import { SkipMascot } from "./SkipMascot";
@@ -54,6 +55,7 @@ const serifAccent: CSSProperties = {
 };
 
 export function SkipWidget() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [messages, setMessages] = useState<ChatTurn[]>([]);
@@ -206,6 +208,8 @@ export function SkipWidget() {
   // Computed as a list (not a boolean) so TypeScript narrows `faqs` away
   // from null before the .map below.
   const chips = messages.length === 0 && faqs ? faqs.slice(0, 6) : [];
+
+  if (pathname?.startsWith("/careers/admin")) return null;
 
   return (
     <>
