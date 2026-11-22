@@ -726,6 +726,7 @@ const NAV_LINKS = [
   { href: "#calculator", label: "List your driveway" },
   { href: "#how", label: "How it works" },
   { href: "#trust", label: "Help" },
+  { href: "/careers", label: "Careers" },
 ];
 
 function Nav() {
@@ -2695,7 +2696,7 @@ function Footer() {
             title="Company"
             links={[
               { label: "Our story", href: "#story" },
-              { label: "Careers", href: "#" },
+              { label: "Careers", href: "/careers" },
               { label: "Press", href: "#" },
               { label: "Help center", href: "#trust" },
             ]}
