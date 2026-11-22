@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { C, F } from "../../theme";
 import { LIMITS } from "../_lib/config";
 import { submitApplication } from "../_lib/api";
@@ -57,6 +57,17 @@ export function ApplicationForm({
   const [done, setDone] = useState<{ first: string; email: string } | null>(null);
   const [whyLen, setWhyLen] = useState(0);
 
+  const doneRef = useRef<HTMLDivElement>(null);
+  const submitErrorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (done) doneRef.current?.focus();
+  }, [done]);
+
+  useEffect(() => {
+    if (submitError) submitErrorRef.current?.focus();
+  }, [submitError]);
+
   const whyLabel = roleId ? "Why Dryvway?" : "What would you like to work on?";
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -80,7 +91,12 @@ export function ApplicationForm({
     );
     setErrors(found);
     setSubmitError(null);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      const order = ["name", "email", "phone", "link", "why", "resume"] as const;
+      const firstInvalid = order.find((k) => found[k]);
+      if (firstInvalid) document.getElementById(firstInvalid)?.focus();
+      return;
+    }
 
     const body = new FormData();
     body.set("role_id", roleId ?? "");
@@ -89,7 +105,7 @@ export function ApplicationForm({
     body.set("phone", fields.phone.trim());
     body.set("link", fields.link.trim());
     body.set("why", fields.why.trim());
-    body.set("company_website", str("company_website"));
+    body.set("hp_field", str("hp_field"));
     if (file) body.set("resume", file);
 
     setSubmitting(true);
@@ -105,6 +121,8 @@ export function ApplicationForm({
   if (done) {
     return (
       <div
+        ref={doneRef}
+        tabIndex={-1}
         role="status"
         style={{
           fontFamily: F.display,
@@ -217,11 +235,11 @@ export function ApplicationForm({
       </div>
 
       <div style={hidden} aria-hidden="true">
-        <input type="text" name="company_website" tabIndex={-1} autoComplete="off" defaultValue="" />
+        <input type="text" name="hp_field" tabIndex={-1} autoComplete="off" defaultValue="" />
       </div>
 
       {submitError && (
-        <p role="alert" style={{ ...errorStyle, fontSize: 15, margin: 0 }}>
+        <p ref={submitErrorRef} tabIndex={-1} role="alert" style={{ ...errorStyle, fontSize: 15, margin: 0 }}>
           {submitError}
         </p>
       )}
